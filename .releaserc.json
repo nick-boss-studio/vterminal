@@ -9,7 +9,13 @@
         "changelogFile": "CHANGELOG.md"
       }
     ],
-[
+    [
+      "@semantic-release/npm",
+      {
+        "npmPublish": false
+      }
+    ],
+    [
       "@semantic-release/github",
       {
         "failComment": false,
