@@ -16,11 +16,18 @@ const { values, positionals } = parseArgs({
     idle: { type: "string" },
     max: { type: "string" },
     claude: { type: "string" },
-    help: { type: "boolean", short: "h" }
+    help: { type: "boolean", short: "h" },
+    version: { type: "boolean", short: "v" }
   },
   allowPositionals: true,
   strict: false
 });
+
+if (values.version) {
+  const { version } = require("../package.json");
+  console.log(version);
+  process.exit(0);
+}
 
 if (values.help || positionals.length === 0) {
   console.log(`
@@ -32,11 +39,12 @@ Arguments:
   params   Arguments to pass to the command
 
 Options:
-  -t, --token  GitHub token (or set GH_TOKEN env var)
-      --idle   Response idle timeout in ms (default: 60000)
-      --max    Max total wait time in ms, 0 = unlimited (default: 420000)
-      --claude Claude CLI executable path (default: "claude")
-  -h, --help   Show this help
+  -t, --token    GitHub token (or set GH_TOKEN env var)
+      --idle     Response idle timeout in ms (default: 60000)
+      --max      Max total wait time in ms, 0 = unlimited (default: 420000)
+      --claude   Claude CLI executable path (default: "claude")
+  -h, --help     Show this help
+  -v, --version  Print version
 
 Examples:
   vclaude code-review https://github.com/owner/repo/pull/42

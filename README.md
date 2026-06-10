@@ -4,23 +4,26 @@
 
 ## 安裝
 
-```bash
-npm install -g vclaude
-```
-
-或直接從原始碼安裝：
-
-```bash
-git clone https://github.com/your-org/vclaude
-cd vclaude
-npm install
-npm link
-```
-
-## 前置需求
-
-- Node.js >= 18
+**前置需求：**
+- Node.js >= 22
 - [Claude Code CLI](https://claude.ai/code) 已安裝並完成登入
+- SSH key 已加入 GitHub（[說明](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)）
+
+```bash
+npm install -g git+ssh://git@github.com/NickChen14/vclaude.git
+```
+
+安裝指定版本：
+
+```bash
+npm install -g git+ssh://git@github.com/NickChen14/vclaude.git#v1.0.0
+```
+
+沒有 SSH 的話，改用 HTTPS token：
+
+```bash
+npm install -g "https://GITHUB_TOKEN@github.com/NickChen14/vclaude.git"
+```
 
 ## 使用方式
 
