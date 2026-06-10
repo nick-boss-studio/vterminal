@@ -1,0 +1,144 @@
+#!/usr/bin/env node
+/**
+ * vclaude — Claude CLI skill/command runner
+ *
+ * 透過 PTY 啟動 Claude CLI，自動執行指定的 skill 或 command，
+ * 待回應輸出靜止 idle ms 後關閉 session。
+ */
+
+const pty = require("@homebridge/node-pty-prebuilt-multiarch");
+const { parseArgs } = require("node:util");
+
+const { values, positionals } = parseArgs({
+  args: process.argv.slice(2),
+  options: {
+    token: { type: "string", short: "t" },
+    idle: { type: "string" },
+    max: { type: "string" },
+    claude: { type: "string" },
+    help: { type: "boolean", short: "h" }
+  },
+  allowPositionals: true,
+  strict: false
+});
+
+if (values.help || positionals.length === 0) {
+  console.log(`
+Usage:
+  vclaude <command> [params]
+
+Arguments:
+  command  Skill or slash command name (without leading /)
+  params   Arguments to pass to the command
+
+Options:
+  -t, --token  GitHub token (or set GH_TOKEN env var)
+      --idle   Response idle timeout in ms (default: 60000)
+      --max    Max total wait time in ms, 0 = unlimited (default: 420000)
+      --claude Claude CLI executable path (default: "claude")
+  -h, --help   Show this help
+
+Examples:
+  vclaude code-review https://github.com/owner/repo/pull/42
+  vclaude code-review ultra 123
+  vclaude run
+  vclaude simplify
+`);
+  process.exit(values.help ? 0 : 1);
+}
+
+const command = positionals[0];
+const params = positionals.slice(1).join(" ");
+const claudeCommand = params ? `/${command} ${params}` : `/${command}`;
+
+const token = values.token || process.env.GH_TOKEN || process.env.GH_PACKAGES_TOKEN;
+
+if (command === "code-review" && !token) {
+  console.error("Error: GitHub token required for code-review. Use --token or set GH_TOKEN env var.");
+  process.exit(1);
+}
+
+const CLAUDE_BIN = values.claude || process.env.CLAUDE_BIN || "claude";
+console.log(`Running: ${claudeCommand}`);
+
+const responseIdleMs = Number(values.idle || process.env.RESPONSE_IDLE_MS) || 60000;
+const responseMaxMs = Number(values.max || process.env.RESPONSE_MAX_MS) || 420000;
+
+let shouldCloseAfterIdle = false;
+let didAutoClose = false;
+let idleTimer = null;
+let maxTimer = null;
+
+const env = { ...process.env, TERM: "xterm-256color" };
+if (token) env.GH_TOKEN = token;
+
+const shell = pty.spawn(CLAUDE_BIN, [], {
+  name: "xterm-256color",
+  cols: 140,
+  rows: 40,
+  cwd: process.cwd(),
+  env
+});
+
+shell.onData((data) => {
+  process.stdout.write(data);
+  if (shouldCloseAfterIdle) {
+    scheduleIdleClose();
+  }
+});
+
+shell.onExit(({ exitCode }) => {
+  clearTimeout(idleTimer);
+  clearTimeout(maxTimer);
+  process.exit(didAutoClose ? 0 : (exitCode ?? 0));
+});
+
+function pasteAndSubmit(text) {
+  shell.write("\x1b[200~");
+  shell.write(text);
+  shell.write("\x1b[201~");
+  setTimeout(() => shell.write("\n"), 300);
+  setTimeout(() => shell.write("\r"), 800);
+}
+
+function closeTerminal() {
+  if (didAutoClose) return;
+  shouldCloseAfterIdle = false;
+  didAutoClose = true;
+  clearTimeout(idleTimer);
+  clearTimeout(maxTimer);
+  process.stdout.write("\n[auto-close] closing terminal...\n");
+  try {
+    shell.kill("SIGTERM");
+  } catch (_) {}
+}
+
+process.on("SIGTERM", closeTerminal);
+process.on("SIGINT", closeTerminal);
+
+function scheduleIdleClose() {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    process.stdout.write(`\n[auto-close] idle timeout reached (${responseIdleMs}ms)\n`);
+    closeTerminal();
+  }, responseIdleMs);
+}
+
+function closeWhenResponseIsIdle() {
+  shouldCloseAfterIdle = true;
+  process.stdout.write(
+    `\n[auto-close] waiting for idle (${responseIdleMs}ms), max (${responseMaxMs}ms)\n`
+  );
+  scheduleIdleClose();
+  if (responseMaxMs > 0) {
+    maxTimer = setTimeout(() => {
+      process.stdout.write(`\n[auto-close] max timeout reached (${responseMaxMs}ms)\n`);
+      closeTerminal();
+    }, responseMaxMs);
+  }
+}
+
+setTimeout(() => {
+  pasteAndSubmit(claudeCommand);
+  setTimeout(closeWhenResponseIsIdle, 1200);
+}, 8000);

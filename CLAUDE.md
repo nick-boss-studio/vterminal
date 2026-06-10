@@ -1,0 +1,42 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## 指令
+
+```bash
+npm install          # 安裝相依套件（包含 node-pty 原生編譯）
+npm run release      # 手動觸發 semantic-release（正常情況由 CI 執行）
+```
+
+沒有設定測試或 lint。唯一的執行時期檔案是 `bin/vclaude`。
+
+## 架構
+
+這是一個單檔 Node.js CLI，發布為 `vclaude` npm binary，所有邏輯都在 [bin/vclaude](bin/vclaude)。
+
+**運作流程：**
+
+1. 解析 CLI 參數：`positionals[0]` = command 名稱，`positionals.slice(1)` = 參數
+2. 透過 `@homebridge/node-pty-prebuilt-multiarch` 啟動 Claude CLI PTY session
+3. 等待 8 秒（讓 Claude CLI 完全載入）後，用 bracketed-paste escape sequence（`\x1b[200~` … `\x1b[201~`）將 `/<command> <params>` 貼入 PTY
+4. 監控輸出——輸出靜止超過 `--idle` ms（預設 60 秒）或總時間超過 `--max` ms（預設 420 秒）後，對 PTY 送 SIGTERM
+
+**關鍵計時常數：**
+- `8000 ms` — 送出指令前的啟動等待時間
+- `1200 ms` — 送出指令後，開始監控 idle 前的額外等待
+- `300 ms / 800 ms` — bracketed paste 後，分批送出換行與 return 的間隔
+
+**自動關閉狀態機：**
+- `shouldCloseAfterIdle` — 控制輸出資料是否重置 idle timer
+- `didAutoClose` — 防止重複關閉；也確保自動關閉時 process 以 exit code 0 結束
+
+**Token 處理：** `GH_TOKEN` / `GH_PACKAGES_TOKEN` 會轉入 PTY 環境變數。只有 `command === "code-review"` 時才強制要求 token。
+
+## 發版
+
+合併到 `main` 會觸發 [.github/workflows/release.yml](.github/workflows/release.yml)，執行 semantic-release，自動更新 `package.json`、寫入 `CHANGELOG.md`、發布到 npm、建立 GitHub Release。
+
+Commit 前綴對應版本：`fix:` → patch、`feat:` → minor、`feat!:` / `BREAKING CHANGE:` → major。
+
+必要的 GitHub Secret：`NPM_TOKEN`（npmjs.com 的 Automation token），`GITHUB_TOKEN` 由 Actions 自動提供。
