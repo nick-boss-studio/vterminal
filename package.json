@@ -12,7 +12,7 @@
     "@homebridge/node-pty-prebuilt-multiarch": "^0.13.1"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "scripts": {
     "release": "semantic-release"
