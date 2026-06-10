@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/NickChen14/vclaude/compare/v1.0.0...v1.1.0) (2026-06-10)
+
+
+### Features
+
+* add version option ([9eaf39c](https://github.com/NickChen14/vclaude/commit/9eaf39c21460298857cb965b87cf584be8b7657a))
+
 # 1.0.0 (2026-06-10)
 
 
