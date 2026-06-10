@@ -13,6 +13,12 @@
 npm install -g git+ssh://git@github.com/NickChen14/vclaude.git
 ```
 
+更新到最新版：
+
+```bash
+npm install -g github:NickChen14/vclaude
+```
+
 安裝指定版本：
 
 ```bash
@@ -61,6 +67,7 @@ vclaude simplify
 | `--max` | 最長等待時間（ms），`0` 表示不限制 | `420000` |
 | `--claude` | Claude CLI 執行檔路徑 | `claude` |
 | `-h, --help` | 顯示說明 | — |
+| `-v, --version` | 顯示版本號 | — |
 
 ## 環境變數
 
