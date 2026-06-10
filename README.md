@@ -75,28 +75,21 @@ vclaude 在送出指令後會監控輸出，當輸出靜止超過 `--idle` 設�
 
 ## 開發與發版
 
-本專案使用 [semantic-release](https://semantic-release.gitbook.io) 自動管理版本與發布，commit 訊息請遵循 [Conventional Commits](https://www.conventionalcommits.org) 格式：
+本專案使用 [semantic-release](https://semantic-release.gitbook.io) 自動管理版本，commit 訊息請遵循 [Conventional Commits](https://www.conventionalcommits.org) 格式。**冒號後必須有空格**，否則不會觸發版本更新。
 
-| Commit 前綴 | 觸發版本 |
-|-------------|----------|
-| `fix:` | patch（1.0.x） |
-| `feat:` | minor（1.x.0） |
-| `feat!:` 或 `BREAKING CHANGE:` | major（x.0.0） |
+```
+feat: 新功能    → minor（1.x.0）
+fix: 修正       → patch（1.0.x）
+feat!: 破壞性   → major（x.0.0）
+chore:/docs:/refactor: 等 → 不出版本
+```
 
 推送到 `main` branch 後，GitHub Actions 會自動：
 1. 分析 commit 決定新版本號
 2. 更新 `CHANGELOG.md` 與 `package.json`
-3. 發布到 npm
-4. 建立 GitHub Release
+3. 建立 GitHub Release
 
-### 所需 Secrets
-
-在 GitHub repository 設定以下 secrets：
-
-| Secret | 說明 |
-|--------|------|
-| `NPM_TOKEN` | npm Automation token（用於發布） |
-| `GITHUB_TOKEN` | 由 GitHub Actions 自動提供，不需手動設定 |
+所需 secret：`GITHUB_TOKEN` 由 Actions 自動提供，不需手動設定。
 
 ## License
 

@@ -35,8 +35,19 @@ npm run release      # 手動觸發 semantic-release（正常情況由 CI 執行
 
 ## 發版
 
-合併到 `main` 會觸發 [.github/workflows/release.yml](.github/workflows/release.yml)，執行 semantic-release，自動更新 `package.json`、寫入 `CHANGELOG.md`、發布到 npm、建立 GitHub Release。
+合併到 `main` 會觸發 [.github/workflows/release.yml](.github/workflows/release.yml)，執行 semantic-release，自動更新 `package.json`、寫入 `CHANGELOG.md`、建立 GitHub Release。不發布到 npm，只需要 `GITHUB_TOKEN`（Actions 自動提供）。
 
-Commit 前綴對應版本：`fix:` → patch、`feat:` → minor、`feat!:` / `BREAKING CHANGE:` → major。
+### Commit 格式（Conventional Commits）
 
-必要的 GitHub Secret：`NPM_TOKEN`（npmjs.com 的 Automation token），`GITHUB_TOKEN` 由 Actions 自動提供。
+**冒號後必須有空格**，否則 semantic-release 不會識別，不會出版本。
+
+```
+feat: 新功能描述        → minor 版（1.x.0）
+fix: 修正描述           → patch 版（1.0.x）
+feat!: 破壞性變更       → major 版（x.0.0）
+chore: 雜項             → 不出版本
+docs: 文件更新          → 不出版本
+refactor: 重構          → 不出版本
+```
+
+`BREAKING CHANGE:` 也可以寫在 commit body，同樣觸發 major。
