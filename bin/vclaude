@@ -41,7 +41,7 @@ Arguments:
 Options:
   -t, --token    GitHub token (or set GH_TOKEN env var)
       --idle     Response idle timeout in ms (default: 60000)
-      --max      Max total wait time in ms, 0 = unlimited (default: 420000)
+      --max      Max total wait time in ms, 0 = unlimited (default: 600000)
       --claude   Claude CLI executable path (default: "claude")
   -h, --help     Show this help
   -v, --version  Print version
