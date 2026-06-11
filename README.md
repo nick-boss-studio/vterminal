@@ -64,7 +64,7 @@ vclaude simplify
 |------|------|--------|
 | `-t, --token` | GitHub token（或設定 `GH_TOKEN` 環境變數） | — |
 | `--idle` | 回應靜止多久後自動關閉（ms） | `60000` |
-| `--max` | 最長等待時間（ms），`0` 表示不限制 | `420000` |
+| `--max` | 最長等待時間（ms），`0` 表示不限制 | `600000` |
 | `--claude` | Claude CLI 執行檔路徑 | `claude` |
 | `-h, --help` | 顯示說明 | — |
 | `-v, --version` | 顯示版本號 | — |

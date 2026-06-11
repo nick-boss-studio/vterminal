@@ -41,7 +41,7 @@ Arguments:
 Options:
   -t, --token    GitHub token (or set GH_TOKEN env var)
       --idle     Response idle timeout in ms (default: 60000)
-      --max      Max total wait time in ms, 0 = unlimited (default: 420000)
+      --max      Max total wait time in ms, 0 = unlimited (default: 600000)
       --claude   Claude CLI executable path (default: "claude")
   -h, --help     Show this help
   -v, --version  Print version
@@ -70,7 +70,7 @@ const CLAUDE_BIN = values.claude || process.env.CLAUDE_BIN || "claude";
 console.log(`Running: ${claudeCommand}`);
 
 const responseIdleMs = Number(values.idle || process.env.RESPONSE_IDLE_MS) || 60000;
-const responseMaxMs = Number(values.max || process.env.RESPONSE_MAX_MS) || 420000;
+const responseMaxMs = Number(values.max || process.env.RESPONSE_MAX_MS) || 600000;
 
 let shouldCloseAfterIdle = false;
 let didAutoClose = false;
