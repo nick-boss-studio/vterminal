@@ -70,7 +70,7 @@ const CLAUDE_BIN = values.claude || process.env.CLAUDE_BIN || "claude";
 console.log(`Running: ${claudeCommand}`);
 
 const responseIdleMs = Number(values.idle || process.env.RESPONSE_IDLE_MS) || 60000;
-const responseMaxMs = Number(values.max || process.env.RESPONSE_MAX_MS) || 420000;
+const responseMaxMs = Number(values.max || process.env.RESPONSE_MAX_MS) || 600000;
 
 let shouldCloseAfterIdle = false;
 let didAutoClose = false;
