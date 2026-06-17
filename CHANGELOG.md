@@ -1,3 +1,10 @@
+## [1.1.3](https://github.com/NickChen14/vclaude/compare/v1.1.2...v1.1.3) (2026-06-17)
+
+
+### Bug Fixes
+
+* --ai ([9342aff](https://github.com/NickChen14/vclaude/commit/9342aff50a5f4eb89ae5b12192379b5e006d1fdd))
+
 ## [1.1.2](https://github.com/NickChen14/vclaude/compare/v1.1.1...v1.1.2) (2026-06-17)
 
 
