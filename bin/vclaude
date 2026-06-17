@@ -15,7 +15,7 @@ const { values, positionals } = parseArgs({
     token: { type: "string", short: "t" },
     idle: { type: "string" },
     max: { type: "string" },
-    claude: { type: "string" },
+    ai: { type: "string" },
     help: { type: "boolean", short: "h" },
     version: { type: "boolean", short: "v" }
   },
@@ -42,7 +42,7 @@ Options:
   -t, --token    GitHub token (or set GH_TOKEN env var)
       --idle     Response idle timeout in ms (default: 60000)
       --max      Max total wait time in ms, 0 = unlimited (default: 600000)
-      --claude   Claude CLI executable path (default: "claude")
+      --ai       AI CLI executable path (default: "claude")
   -h, --help     Show this help
   -v, --version  Print version
 
@@ -66,7 +66,7 @@ if (command === "code-review" && !token) {
   process.exit(1);
 }
 
-const CLAUDE_BIN = values.claude || process.env.CLAUDE_BIN || "claude";
+const CLAUDE_BIN = values.ai || process.env.CLAUDE_BIN || "claude";
 console.log(`Running: ${claudeCommand}`);
 
 const responseIdleMs = Number(values.idle || process.env.RESPONSE_IDLE_MS) || 60000;
