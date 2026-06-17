@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/NickChen14/vclaude/compare/v1.1.1...v1.1.2) (2026-06-17)
+
+
+### Bug Fixes
+
+* action 裡看乾淨的純文字輸出 ([2aadee5](https://github.com/NickChen14/vclaude/commit/2aadee5694320bfc11c649a565494d38a619e249))
+
 ## [1.1.1](https://github.com/NickChen14/vclaude/compare/v1.1.0...v1.1.1) (2026-06-11)
 
 
