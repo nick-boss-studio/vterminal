@@ -65,7 +65,7 @@ vclaude simplify
 | `-t, --token` | GitHub token（或設定 `GH_TOKEN` 環境變數） | — |
 | `--idle` | 回應靜止多久後自動關閉（ms） | `60000` |
 | `--max` | 最長等待時間（ms），`0` 表示不限制 | `600000` |
-| `--claude` | Claude CLI 執行檔路徑 | `claude` |
+| `--bin` | CLI 執行檔名稱（透過 PATH 解析），僅允許 `claude`／`codex`／`agy` | `claude` |
 | `-h, --help` | 顯示說明 | — |
 | `-v, --version` | 顯示版本號 | — |
 
@@ -75,7 +75,7 @@ vclaude simplify
 |------|------|
 | `GH_TOKEN` | GitHub Personal Access Token（`code-review` 時必填） |
 | `GH_PACKAGES_TOKEN` | 備用 GitHub token |
-| `CLAUDE_BIN` | Claude CLI 執行檔路徑 |
+| `CLAUDE_BIN` | CLI 執行檔名稱（透過 PATH 解析），同 `--bin` |
 | `RESPONSE_IDLE_MS` | 同 `--idle` |
 | `RESPONSE_MAX_MS` | 同 `--max` |
 

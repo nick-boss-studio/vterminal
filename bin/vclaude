@@ -15,7 +15,7 @@ const { values, positionals } = parseArgs({
     token: { type: "string", short: "t" },
     idle: { type: "string" },
     max: { type: "string" },
-    claude: { type: "string" },
+    bin: { type: "string" },
     help: { type: "boolean", short: "h" },
     version: { type: "boolean", short: "v" }
   },
@@ -42,7 +42,7 @@ Options:
   -t, --token    GitHub token (or set GH_TOKEN env var)
       --idle     Response idle timeout in ms (default: 60000)
       --max      Max total wait time in ms, 0 = unlimited (default: 600000)
-      --claude   Claude CLI executable path (default: "claude")
+      --bin      CLI executable name, resolved via PATH: claude/codex/agy (default: "claude")
   -h, --help     Show this help
   -v, --version  Print version
 
@@ -66,7 +66,17 @@ if (command === "code-review" && !token) {
   process.exit(1);
 }
 
-const CLAUDE_BIN = values.claude || process.env.CLAUDE_BIN || "claude";
+const CLAUDE_BIN = values.bin || process.env.CLAUDE_BIN || "claude";
+
+if (/[\\/]/.test(CLAUDE_BIN)) {
+  console.error(`Error: --bin must be an executable name resolved via PATH, not a path ("${CLAUDE_BIN}").`);
+  process.exit(1);
+}
+if (!/^(claude|codex|agy)$/i.test(CLAUDE_BIN)) {
+  console.error(`Error: --bin must be one of claude/codex/agy, got "${CLAUDE_BIN}".`);
+  process.exit(1);
+}
+
 console.log(`Running: ${claudeCommand}`);
 
 const responseIdleMs = Number(values.idle || process.env.RESPONSE_IDLE_MS) || 60000;
