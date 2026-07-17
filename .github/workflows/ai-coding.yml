@@ -1,0 +1,18 @@
+name: AI Coding
+
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  ai-coding:
+    name: "AI Coding - ${{ github.event.repository.name }}"
+    uses: nick-boss-studio/shared-actions/.github/workflows/reusable-ai-coding.yml@v1
+    secrets: inherit
