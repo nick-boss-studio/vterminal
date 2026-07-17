@@ -35,18 +35,18 @@ gh pr diff "$ARGUMENTS"
 
 ### 留言與嚴重程度
 
-用 line comment 標註問題位置：
-
-```bash
-gh pr comment "$ARGUMENTS" --body "..."
-```
-
 每個問題標註嚴重程度（依 [MUST/SHOULD/MAY](https://www.rfc-editor.org/rfc/rfc2119)）：
 - 🔴 **MUST** — 正確性 bug、安全漏洞，必須修正才能合併
 - 🟡 **SHOULD** — 設計/簡化建議，強烈建議但非阻塞
 - 🟢 **MAY** — 選擇性優化，可自行判斷
 
 Review 結束後，在 PR 留一則總結留言：問題清單（依嚴重程度排序）+ 整體是否建議合併的結論。
+
+**留言內容一律先用 Write 工具寫成暫存檔，再用 `--body-file` 讀檔送出，不要用 Bash heredoc（`--body "$(cat <<'EOF' ... EOF)"`）組字串**——heredoc 內容若含跳脫字元，在無人值守的 CI 環境會觸發 permission 確認導致卡住：
+
+```bash
+gh pr comment "$ARGUMENTS" --body-file /tmp/lab-review-summary.md
+```
 
 ## 語言
 
