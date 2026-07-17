@@ -1,3 +1,10 @@
+# [2.2.0](https://github.com/nick-boss-studio/vterminal/compare/v2.1.0...v2.2.0) (2026-07-17)
+
+
+### Features
+
+* add AI Lab Review workflow and /lab-review command ([#5](https://github.com/nick-boss-studio/vterminal/issues/5)) ([5a3bc90](https://github.com/nick-boss-studio/vterminal/commit/5a3bc9015f2e42139aca37f37c7c29a506309f5e))
+
 # [2.1.0](https://github.com/nick-boss-studio/vterminal/compare/v2.0.0...v2.1.0) (2026-07-17)
 
 
