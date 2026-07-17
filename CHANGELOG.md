@@ -1,3 +1,10 @@
+# [2.1.0](https://github.com/nick-boss-studio/vterminal/compare/v2.0.0...v2.1.0) (2026-07-17)
+
+
+### Features
+
+* add AI coding workflow and /coding command ([#3](https://github.com/nick-boss-studio/vterminal/issues/3)) ([a524faa](https://github.com/nick-boss-studio/vterminal/commit/a524faa4ec350a06ec235cc7ab071869542e08b0))
+
 # [2.0.0](https://github.com/nick-boss-studio/vterminal/compare/v1.0.0...v2.0.0) (2026-07-17)
 
 
