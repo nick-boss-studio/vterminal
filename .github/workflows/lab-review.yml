@@ -1,0 +1,17 @@
+name: AI Lab Review
+
+on:
+  pull_request:
+    types: [opened, labeled]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ai-lab-review:
+    name: "AI Lab Review - ${{ github.event.repository.name }}"
+    uses: nick-boss-studio/shared-actions/.github/workflows/reusable-ai-lab-review.yml@v2
+    secrets: inherit
