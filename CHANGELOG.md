@@ -1,3 +1,10 @@
+## [2.2.1](https://github.com/nick-boss-studio/vterminal/compare/v2.2.0...v2.2.1) (2026-07-17)
+
+
+### Bug Fixes
+
+* avoid heredoc-built PR comment bodies in lab-review ([#6](https://github.com/nick-boss-studio/vterminal/issues/6)) ([571d17b](https://github.com/nick-boss-studio/vterminal/commit/571d17b5284c904073e8bd6f1dee09e483683449))
+
 # [2.2.0](https://github.com/nick-boss-studio/vterminal/compare/v2.1.0...v2.2.0) (2026-07-17)
 
 
