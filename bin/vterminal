@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * vclaude — Claude CLI skill/command runner
+ * vterminal — AI CLI skill/command runner
  *
- * 透過 PTY 啟動 Claude CLI，自動執行指定的 skill 或 command，
+ * 透過 PTY 啟動 AI CLI（claude/codex/agy），自動執行指定的 skill 或 command，
  * 待回應輸出靜止 idle ms 後關閉 session。
  */
 
@@ -15,7 +15,7 @@ const { values, positionals } = parseArgs({
     token: { type: "string", short: "t" },
     idle: { type: "string" },
     max: { type: "string" },
-    claude: { type: "string" },
+    bin: { type: "string" },
     help: { type: "boolean", short: "h" },
     version: { type: "boolean", short: "v" }
   },
@@ -32,7 +32,7 @@ if (values.version) {
 if (values.help || positionals.length === 0) {
   console.log(`
 Usage:
-  vclaude <command> [params]
+  vterminal <command> [params]
 
 Arguments:
   command  Skill or slash command name (without leading /)
@@ -42,15 +42,15 @@ Options:
   -t, --token    GitHub token (or set GH_TOKEN env var)
       --idle     Response idle timeout in ms (default: 60000)
       --max      Max total wait time in ms, 0 = unlimited (default: 600000)
-      --claude   Claude CLI executable path (default: "claude")
+      --bin      CLI executable name, resolved via PATH: claude/codex/agy (default: "claude")
   -h, --help     Show this help
   -v, --version  Print version
 
 Examples:
-  vclaude code-review https://github.com/owner/repo/pull/42
-  vclaude code-review ultra 123
-  vclaude run
-  vclaude simplify
+  vterminal code-review https://github.com/owner/repo/pull/42
+  vterminal code-review ultra 123
+  vterminal run
+  vterminal simplify
 `);
   process.exit(values.help ? 0 : 1);
 }
@@ -66,7 +66,17 @@ if (command === "code-review" && !token) {
   process.exit(1);
 }
 
-const CLAUDE_BIN = values.claude || process.env.CLAUDE_BIN || "claude";
+const CLAUDE_BIN = values.bin || process.env.CLAUDE_BIN || "claude";
+
+if (/[\\/]/.test(CLAUDE_BIN)) {
+  console.error(`Error: --bin must be an executable name resolved via PATH, not a path ("${CLAUDE_BIN}").`);
+  process.exit(1);
+}
+if (!/^(claude|codex|agy)$/i.test(CLAUDE_BIN)) {
+  console.error(`Error: --bin must be one of claude/codex/agy, got "${CLAUDE_BIN}".`);
+  process.exit(1);
+}
+
 console.log(`Running: ${claudeCommand}`);
 
 const responseIdleMs = Number(values.idle || process.env.RESPONSE_IDLE_MS) || 60000;
@@ -89,7 +99,10 @@ const shell = pty.spawn(CLAUDE_BIN, [], {
 });
 
 shell.onData((data) => {
-  process.stdout.write(data);
+  const out = process.stdout.isTTY
+    ? data
+    : data.replace(/\x1b\[[0-9;?]*[A-Za-z]|\x1b][^\x07]*\x07|\r/g, "");
+  process.stdout.write(out);
   if (shouldCloseAfterIdle) {
     scheduleIdleClose();
   }

@@ -9,11 +9,11 @@ npm install          # 安裝相依套件（包含 node-pty 原生編譯）
 npm run release      # 手動觸發 semantic-release（正常情況由 CI 執行）
 ```
 
-沒有設定測試或 lint。唯一的執行時期檔案是 `bin/vclaude`。
+沒有設定測試或 lint。唯一的執行時期檔案是 `bin/vterminal`。
 
 ## 架構
 
-這是一個單檔 Node.js CLI，發布為 `vclaude` npm binary，所有邏輯都在 [bin/vclaude](bin/vclaude)。
+這是一個單檔 Node.js CLI，發布為 `vterminal` npm binary，所有邏輯都在 [bin/vterminal](bin/vterminal)。
 
 **運作流程：**
 
