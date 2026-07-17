@@ -1,12 +1,12 @@
 {
-  "name": "vclaude",
+  "name": "vterminal",
   "version": "1.0.0",
-  "description": "Run Claude skills and slash commands from the terminal via PTY",
+  "description": "Run AI CLI skills and slash commands from the terminal via PTY",
   "bin": {
-    "vclaude": "./bin/vclaude"
+    "vterminal": "./bin/vterminal"
   },
   "files": [
-    "bin/vclaude"
+    "bin/vterminal"
   ],
   "dependencies": {
     "@homebridge/node-pty-prebuilt-multiarch": "^0.13.1"

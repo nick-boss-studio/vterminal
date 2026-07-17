@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * vclaude — Claude CLI skill/command runner
+ * vterminal — AI CLI skill/command runner
  *
- * 透過 PTY 啟動 Claude CLI，自動執行指定的 skill 或 command，
+ * 透過 PTY 啟動 AI CLI（claude/codex/agy），自動執行指定的 skill 或 command，
  * 待回應輸出靜止 idle ms 後關閉 session。
  */
 
@@ -32,7 +32,7 @@ if (values.version) {
 if (values.help || positionals.length === 0) {
   console.log(`
 Usage:
-  vclaude <command> [params]
+  vterminal <command> [params]
 
 Arguments:
   command  Skill or slash command name (without leading /)
@@ -47,10 +47,10 @@ Options:
   -v, --version  Print version
 
 Examples:
-  vclaude code-review https://github.com/owner/repo/pull/42
-  vclaude code-review ultra 123
-  vclaude run
-  vclaude simplify
+  vterminal code-review https://github.com/owner/repo/pull/42
+  vterminal code-review ultra 123
+  vterminal run
+  vterminal simplify
 `);
   process.exit(values.help ? 0 : 1);
 }

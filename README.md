@@ -1,6 +1,6 @@
-# vclaude
+# vterminal
 
-透過 PTY 啟動 Claude CLI，自動執行任意 skill 或 slash command，待回應輸出靜止後自動關閉 session。
+透過 PTY 啟動 AI CLI（claude／codex／agy），自動執行任意 skill 或 slash command，待回應輸出靜止後自動關閉 session。
 
 ## 安裝
 
@@ -34,7 +34,7 @@ npm install -g "https://GITHUB_TOKEN@github.com/NickChen14/vclaude.git"
 ## 使用方式
 
 ```
-vclaude <command> [params]
+vterminal <command> [params]
 ```
 
 | 參數 | 說明 |
@@ -46,16 +46,16 @@ vclaude <command> [params]
 
 ```bash
 # Code review 一個 PR（需要 GH_TOKEN）
-vclaude code-review https://github.com/owner/repo/pull/42
+vterminal code-review https://github.com/owner/repo/pull/42
 
 # 使用 ultra 模式 review 指定 PR 編號
-vclaude code-review ultra 123
+vterminal code-review ultra 123
 
 # 執行 run skill
-vclaude run
+vterminal run
 
 # 執行 simplify skill
-vclaude simplify
+vterminal simplify
 ```
 
 ## 選項
@@ -81,7 +81,7 @@ vclaude simplify
 
 ## 自動關閉機制
 
-vclaude 在送出指令後會監控輸出，當輸出靜止超過 `--idle` 設定的時間時自動關閉 session。若整體時間超過 `--max`，也會強制關閉。
+vterminal 在送出指令後會監控輸出，當輸出靜止超過 `--idle` 設定的時間時自動關閉 session。若整體時間超過 `--max`，也會強制關閉。
 
 ## 開發與發版
 
