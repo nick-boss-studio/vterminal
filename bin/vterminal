@@ -99,7 +99,10 @@ const shell = pty.spawn(CLAUDE_BIN, [], {
 });
 
 shell.onData((data) => {
-  process.stdout.write(data);
+  const out = process.stdout.isTTY
+    ? data
+    : data.replace(/\x1b\[[0-9;?]*[A-Za-z]|\x1b][^\x07]*\x07|\r/g, "");
+  process.stdout.write(out);
   if (shouldCloseAfterIdle) {
     scheduleIdleClose();
   }
