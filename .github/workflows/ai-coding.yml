@@ -14,5 +14,5 @@ permissions:
 jobs:
   ai-coding:
     name: "AI Coding - ${{ github.event.repository.name }}"
-    uses: nick-boss-studio/shared-actions/.github/workflows/reusable-ai-coding.yml@v1
+    uses: nick-boss-studio/shared-actions/.github/workflows/reusable-ai-coding.yml@v2
     secrets: inherit

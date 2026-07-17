@@ -13,5 +13,5 @@ permissions:
 jobs:
   ai-lab-review:
     name: "AI Lab Review - ${{ github.event.repository.name }}"
-    uses: nick-boss-studio/shared-actions/.github/workflows/reusable-ai-lab-review.yml@v1
+    uses: nick-boss-studio/shared-actions/.github/workflows/reusable-ai-lab-review.yml@v2
     secrets: inherit
