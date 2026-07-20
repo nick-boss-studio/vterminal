@@ -1,3 +1,10 @@
+## [2.2.2](https://github.com/nick-boss-studio/vterminal/compare/v2.2.1...v2.2.2) (2026-07-20)
+
+
+### Bug Fixes
+
+* rename ([e813a05](https://github.com/nick-boss-studio/vterminal/commit/e813a05b68ca3ef1b3e28d113eab586521681956))
+
 ## [2.2.1](https://github.com/nick-boss-studio/vterminal/compare/v2.2.0...v2.2.1) (2026-07-17)
 
 
