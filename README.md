@@ -10,25 +10,25 @@
 - SSH key 已加入 GitHub（[說明](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)）
 
 ```bash
-npm install -g git+ssh://git@github.com/NickChen14/vterminal.git
+npm install -g git+ssh://git@github.com/nick-boss-studio/vterminal.git
 ```
 
 更新到最新版：
 
 ```bash
-npm install -g github:NickChen14/vterminal
+npm install -g github:nick-boss-studio/vterminal
 ```
 
 安裝指定版本：
 
 ```bash
-npm install -g git+ssh://git@github.com/NickChen14/vterminal.git#v1.0.0
+npm install -g git+ssh://git@github.com/nick-boss-studio/vterminal.git#v1.0.0
 ```
 
 沒有 SSH 的話，改用 HTTPS token：
 
 ```bash
-npm install -g "https://GITHUB_TOKEN@github.com/NickChen14/vterminal.git"
+npm install -g "https://GITHUB_TOKEN@github.com/nick-boss-studio/vterminal.git"
 ```
 
 ## 使用方式
