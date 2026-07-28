@@ -1,3 +1,10 @@
+## [2.2.4](https://github.com/nick-boss-studio/vterminal/compare/v2.2.3...v2.2.4) (2026-07-28)
+
+
+### Bug Fixes
+
+* 修正安裝後找不到 lib/github-actions-output 模組 ([#10](https://github.com/nick-boss-studio/vterminal/issues/10)) ([4f2af5b](https://github.com/nick-boss-studio/vterminal/commit/4f2af5b389ca01547c7494fdb9ba63f6d715ee99))
+
 ## [2.2.3](https://github.com/nick-boss-studio/vterminal/compare/v2.2.2...v2.2.3) (2026-07-28)
 
 
