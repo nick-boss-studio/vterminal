@@ -1,3 +1,10 @@
+## [2.2.3](https://github.com/nick-boss-studio/vterminal/compare/v2.2.2...v2.2.3) (2026-07-28)
+
+
+### Bug Fixes
+
+* 優化 github 輸出 ([53dd0fb](https://github.com/nick-boss-studio/vterminal/commit/53dd0fba6cda7dbd7a1a9c3039e7e2eab9185613))
+
 ## [2.2.2](https://github.com/nick-boss-studio/vterminal/compare/v2.2.1...v2.2.2) (2026-07-20)
 
 
