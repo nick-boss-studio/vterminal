@@ -6,7 +6,8 @@
     "vterminal": "./bin/vterminal"
   },
   "files": [
-    "bin/vterminal"
+    "bin/vterminal",
+    "lib/"
   ],
   "dependencies": {
     "@homebridge/node-pty-prebuilt-multiarch": "^0.13.1"
