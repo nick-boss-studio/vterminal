@@ -8,6 +8,11 @@
 
 const pty = require("@homebridge/node-pty-prebuilt-multiarch");
 const { parseArgs } = require("node:util");
+const {
+  writeGitHubActionsOutput,
+  writeGitHubActionsGroup,
+  endGitHubActionsGroup
+} = require("../lib/github-actions-output");
 
 const { values, positionals } = parseArgs({
   args: process.argv.slice(2),
@@ -77,7 +82,8 @@ if (!/^(claude|codex|agy)$/i.test(CLAUDE_BIN)) {
   process.exit(1);
 }
 
-console.log(`Running: ${claudeCommand}`);
+writeGitHubActionsGroup(`vterminal: ${claudeCommand}`);
+writeGitHubActionsOutput(`Running: ${claudeCommand}`);
 
 const responseIdleMs = Number(values.idle || process.env.RESPONSE_IDLE_MS) || 60000;
 const responseMaxMs = Number(values.max || process.env.RESPONSE_MAX_MS) || 600000;
@@ -102,7 +108,11 @@ shell.onData((data) => {
   const out = process.stdout.isTTY
     ? data
     : data.replace(/\x1b\[[0-9;?]*[A-Za-z]|\x1b][^\x07]*\x07|\r/g, "");
-  process.stdout.write(out);
+  if (!process.stdout.isTTY) {
+    writeGitHubActionsOutput(out);
+  } else {
+    process.stdout.write(out);
+  }
   if (shouldCloseAfterIdle) {
     scheduleIdleClose();
   }
@@ -111,6 +121,7 @@ shell.onData((data) => {
 shell.onExit(({ exitCode }) => {
   clearTimeout(idleTimer);
   clearTimeout(maxTimer);
+  endGitHubActionsGroup();
   process.exit(didAutoClose ? 0 : (exitCode ?? 0));
 });
 
@@ -128,7 +139,7 @@ function closeTerminal() {
   didAutoClose = true;
   clearTimeout(idleTimer);
   clearTimeout(maxTimer);
-  process.stdout.write("\n[auto-close] closing terminal...\n");
+  writeGitHubActionsOutput("[auto-close] closing terminal...");
   try {
     shell.kill("SIGTERM");
   } catch (_) {}
@@ -140,20 +151,20 @@ process.on("SIGINT", closeTerminal);
 function scheduleIdleClose() {
   clearTimeout(idleTimer);
   idleTimer = setTimeout(() => {
-    process.stdout.write(`\n[auto-close] idle timeout reached (${responseIdleMs}ms)\n`);
+    writeGitHubActionsOutput(`[auto-close] idle timeout reached (${responseIdleMs}ms)`);
     closeTerminal();
   }, responseIdleMs);
 }
 
 function closeWhenResponseIsIdle() {
   shouldCloseAfterIdle = true;
-  process.stdout.write(
-    `\n[auto-close] waiting for idle (${responseIdleMs}ms), max (${responseMaxMs}ms)\n`
+  writeGitHubActionsOutput(
+    `[auto-close] waiting for idle (${responseIdleMs}ms), max (${responseMaxMs}ms)`
   );
   scheduleIdleClose();
   if (responseMaxMs > 0) {
     maxTimer = setTimeout(() => {
-      process.stdout.write(`\n[auto-close] max timeout reached (${responseMaxMs}ms)\n`);
+      writeGitHubActionsOutput(`[auto-close] max timeout reached (${responseMaxMs}ms)`);
       closeTerminal();
     }, responseMaxMs);
   }
