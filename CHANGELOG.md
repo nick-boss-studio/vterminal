@@ -1,3 +1,11 @@
+## [2.2.5](https://github.com/nick-boss-studio/vterminal/compare/v2.2.4...v2.2.5) (2026-07-29)
+
+
+### Bug Fixes
+
+* 修正 PTY 輸出因 spinner 重繪與逐 chunk 寫出導致的雜訊 ([c90145c](https://github.com/nick-boss-studio/vterminal/commit/c90145c086a553961b08e9ca92cf944f148e5dfb))
+* 優化 github 輸出 ([eba2842](https://github.com/nick-boss-studio/vterminal/commit/eba28420e5ac206bd43341f028a9ab3475662ef9))
+
 ## [2.2.4](https://github.com/nick-boss-studio/vterminal/compare/v2.2.3...v2.2.4) (2026-07-28)
 
 
