@@ -120,13 +120,25 @@ const term = new Terminal({
   allowProposedApi: true
 });
 
+// Claude CLI 的忙碌狀態列（spinner + 經過時間 + token 數，如
+// "✢ Thundering… (5s · ↓ 140 tokens)"）用「↓/↑ 數字 tokens」這個組合
+// 當特徵字串辨識，比對到就整行包灰色，跟實際回應內容區隔開來。
+const STATUS_LINE_RE = /[↓↑]\s*[\d.]+k?\s*tokens\b/;
+const GRAY = "\x1b[90m";
+const RESET = "\x1b[0m";
+
+function emitLine(text) {
+  const colored = STATUS_LINE_RE.test(text) ? `${GRAY}${text}${RESET}` : text;
+  writeGitHubActionsOutput(colored, { preserveAnsi: true });
+}
+
 let flushedRow = 0;
 
 function flushRows(upToExclusive) {
   const buffer = term.buffer.active;
   for (; flushedRow < upToExclusive; flushedRow++) {
     const line = buffer.getLine(flushedRow);
-    writeGitHubActionsOutput(line ? line.translateToString(true) : "");
+    emitLine(line ? line.translateToString(true) : "");
   }
 }
 
@@ -157,7 +169,7 @@ function previewLiveViewport() {
     const line = buffer.getLine(i);
     const text = line ? line.translateToString(true) : "";
     if (text && lastPreviewByRow.get(i) !== text) {
-      writeGitHubActionsOutput(text);
+      emitLine(text);
       lastPreviewByRow.set(i, text);
     }
   }
