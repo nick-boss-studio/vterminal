@@ -29,9 +29,10 @@ const { values, positionals } = parseArgs({
   strict: false
 });
 
+const { version: VTERMINAL_VERSION } = require("../package.json");
+
 if (values.version) {
-  const { version } = require("../package.json");
-  console.log(version);
+  console.log(VTERMINAL_VERSION);
   process.exit(0);
 }
 
@@ -84,6 +85,7 @@ if (!/^(claude|codex|agy)$/i.test(CLAUDE_BIN)) {
 }
 
 writeGitHubActionsGroup(`vterminal: ${claudeCommand}`);
+writeGitHubActionsOutput(`vterminal v${VTERMINAL_VERSION}`);
 writeGitHubActionsOutput(`Running: ${claudeCommand}`);
 
 const responseIdleMs = Number(values.idle || process.env.RESPONSE_IDLE_MS) || 60000;
