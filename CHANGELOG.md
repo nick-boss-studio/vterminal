@@ -1,3 +1,10 @@
+## [2.2.6](https://github.com/nick-boss-studio/vterminal/compare/v2.2.5...v2.2.6) (2026-07-29)
+
+
+### Bug Fixes
+
+* 用 headless terminal 模擬正確解析 PTY 輸出，避免內容遺失或雜訊 ([01dcabb](https://github.com/nick-boss-studio/vterminal/commit/01dcabb9bebc4610f5dd7f94fc859aa839176eb9))
+
 ## [2.2.5](https://github.com/nick-boss-studio/vterminal/compare/v2.2.4...v2.2.5) (2026-07-29)
 
 
