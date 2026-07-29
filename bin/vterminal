@@ -104,23 +104,35 @@ const shell = pty.spawn(CLAUDE_BIN, [], {
   env
 });
 
+let ptyLineBuffer = "";
+
 shell.onData((data) => {
-  const out = process.stdout.isTTY
-    ? data
-    : data.replace(/\x1b\[[0-9;?]*[A-Za-z]|\x1b][^\x07]*\x07|\r/g, "");
-  if (!process.stdout.isTTY) {
-    writeGitHubActionsOutput(out);
+  if (process.stdout.isTTY) {
+    process.stdout.write(data);
   } else {
-    process.stdout.write(out);
+    ptyLineBuffer += data;
+    const lines = ptyLineBuffer.split("\n");
+    ptyLineBuffer = lines.pop();
+    for (const line of lines) {
+      writeGitHubActionsOutput(line);
+    }
   }
   if (shouldCloseAfterIdle) {
     scheduleIdleClose();
   }
 });
 
+function flushPtyLineBuffer() {
+  if (!process.stdout.isTTY && ptyLineBuffer) {
+    writeGitHubActionsOutput(ptyLineBuffer);
+    ptyLineBuffer = "";
+  }
+}
+
 shell.onExit(({ exitCode }) => {
   clearTimeout(idleTimer);
   clearTimeout(maxTimer);
+  flushPtyLineBuffer();
   endGitHubActionsGroup();
   process.exit(didAutoClose ? 0 : (exitCode ?? 0));
 });
