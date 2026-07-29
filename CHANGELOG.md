@@ -1,3 +1,10 @@
+# [2.4.0](https://github.com/nick-boss-studio/vterminal/compare/v2.3.0...v2.4.0) (2026-07-29)
+
+
+### Features
+
+* 每 5 秒預覽目前 viewport 內容，讓過程中的回應可見 ([2a7cbb2](https://github.com/nick-boss-studio/vterminal/commit/2a7cbb2e8a28ca9bfc3b5aea2135b36ea2d26814))
+
 # [2.3.0](https://github.com/nick-boss-studio/vterminal/compare/v2.2.6...v2.3.0) (2026-07-29)
 
 
