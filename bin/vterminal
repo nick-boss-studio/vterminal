@@ -143,6 +143,29 @@ function flushAllRows(callback) {
   });
 }
 
+// 只 flush 已捲出畫面的「定案」行會太安靜——很多回應在結束前都停在同一個
+// viewport 內反覆重繪，不會捲動。用計時器定期預覽目前 viewport 的內容，
+// 只印出跟上次預覽不同的行（用絕對行號比對，flushedRow 前進後自動清掉舊
+// entry），讓過程中的回應看得到，又不會整段重複洗版。
+const PREVIEW_INTERVAL_MS = 5000;
+const lastPreviewByRow = new Map();
+let previewTimer = null;
+
+function previewLiveViewport() {
+  const buffer = term.buffer.active;
+  for (let i = flushedRow; i < buffer.length; i++) {
+    const line = buffer.getLine(i);
+    const text = line ? line.translateToString(true) : "";
+    if (text && lastPreviewByRow.get(i) !== text) {
+      writeGitHubActionsOutput(text);
+      lastPreviewByRow.set(i, text);
+    }
+  }
+  for (const rowIndex of lastPreviewByRow.keys()) {
+    if (rowIndex < flushedRow) lastPreviewByRow.delete(rowIndex);
+  }
+}
+
 shell.onData((data) => {
   if (process.stdout.isTTY) {
     process.stdout.write(data);
@@ -154,9 +177,14 @@ shell.onData((data) => {
   }
 });
 
+if (!process.stdout.isTTY) {
+  previewTimer = setInterval(previewLiveViewport, PREVIEW_INTERVAL_MS);
+}
+
 shell.onExit(({ exitCode }) => {
   clearTimeout(idleTimer);
   clearTimeout(maxTimer);
+  clearInterval(previewTimer);
   const finish = () => {
     endGitHubActionsGroup();
     process.exit(didAutoClose ? 0 : (exitCode ?? 0));
