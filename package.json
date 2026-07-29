@@ -10,7 +10,8 @@
     "lib/"
   ],
   "dependencies": {
-    "@homebridge/node-pty-prebuilt-multiarch": "^0.13.1"
+    "@homebridge/node-pty-prebuilt-multiarch": "^0.13.1",
+    "@xterm/headless": "^6.0.0"
   },
   "engines": {
     "node": ">=22"

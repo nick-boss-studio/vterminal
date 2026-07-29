@@ -7,6 +7,7 @@
  */
 
 const pty = require("@homebridge/node-pty-prebuilt-multiarch");
+const { Terminal } = require("@xterm/headless");
 const { parseArgs } = require("node:util");
 const {
   writeGitHubActionsOutput,
@@ -96,45 +97,73 @@ let maxTimer = null;
 const env = { ...process.env, TERM: "xterm-256color" };
 if (token) env.GH_TOKEN = token;
 
+const PTY_COLS = 140;
+const PTY_ROWS = 40;
+
 const shell = pty.spawn(CLAUDE_BIN, [], {
   name: "xterm-256color",
-  cols: 140,
-  rows: 40,
+  cols: PTY_COLS,
+  rows: PTY_ROWS,
   cwd: process.cwd(),
   env
 });
 
-let ptyLineBuffer = "";
+// Claude 的 TUI 用游標定位（非單純換行）反覆重繪同一畫面（spinner、串流中的回應）。
+// 直接把每個 PTY data chunk 當一行輸出會產生大量重繪雜訊；
+// 用 headless terminal 模擬真實渲染結果，只有捲出畫面（已定案、不會再被重繪）的行才輸出。
+const term = new Terminal({
+  cols: PTY_COLS,
+  rows: PTY_ROWS,
+  scrollback: 10000,
+  allowProposedApi: true
+});
+
+let flushedRow = 0;
+
+function flushRows(upToExclusive) {
+  const buffer = term.buffer.active;
+  for (; flushedRow < upToExclusive; flushedRow++) {
+    const line = buffer.getLine(flushedRow);
+    writeGitHubActionsOutput(line ? line.translateToString(true) : "");
+  }
+}
+
+function flushSettledRows() {
+  flushRows(term.buffer.active.baseY);
+}
+
+function flushAllRows(callback) {
+  // term.write() 內部以佇列非同步處理；送一次空字串等佇列清空後再讀 buffer，
+  // 確保 flush 涵蓋所有已收到但尚未 parse 完成的資料。
+  term.write("", () => {
+    flushRows(term.buffer.active.length);
+    if (callback) callback();
+  });
+}
 
 shell.onData((data) => {
   if (process.stdout.isTTY) {
     process.stdout.write(data);
   } else {
-    ptyLineBuffer += data;
-    const lines = ptyLineBuffer.split("\n");
-    ptyLineBuffer = lines.pop();
-    for (const line of lines) {
-      writeGitHubActionsOutput(line);
-    }
+    term.write(data, flushSettledRows);
   }
   if (shouldCloseAfterIdle) {
     scheduleIdleClose();
   }
 });
 
-function flushPtyLineBuffer() {
-  if (!process.stdout.isTTY && ptyLineBuffer) {
-    writeGitHubActionsOutput(ptyLineBuffer);
-    ptyLineBuffer = "";
-  }
-}
-
 shell.onExit(({ exitCode }) => {
   clearTimeout(idleTimer);
   clearTimeout(maxTimer);
-  flushPtyLineBuffer();
-  endGitHubActionsGroup();
-  process.exit(didAutoClose ? 0 : (exitCode ?? 0));
+  const finish = () => {
+    endGitHubActionsGroup();
+    process.exit(didAutoClose ? 0 : (exitCode ?? 0));
+  };
+  if (process.stdout.isTTY) {
+    finish();
+  } else {
+    flushAllRows(finish);
+  }
 });
 
 function pasteAndSubmit(text) {
