@@ -1,3 +1,10 @@
+# [2.5.0](https://github.com/nick-boss-studio/vterminal/compare/v2.4.0...v2.5.0) (2026-07-29)
+
+
+### Features
+
+* 忙碌狀態列（spinner + token 數）改用淺灰色輸出 ([8f4da6b](https://github.com/nick-boss-studio/vterminal/commit/8f4da6b08575c0d39b3a7a2dbbfc5b8717e88ac4))
+
 # [2.4.0](https://github.com/nick-boss-studio/vterminal/compare/v2.3.0...v2.4.0) (2026-07-29)
 
 
