@@ -1,3 +1,10 @@
+# [2.3.0](https://github.com/nick-boss-studio/vterminal/compare/v2.2.6...v2.3.0) (2026-07-29)
+
+
+### Features
+
+* 執行時輸出 vterminal 版本號，方便確認 CI runner 實際使用的版本 ([d97dcd6](https://github.com/nick-boss-studio/vterminal/commit/d97dcd67a94f5836e3659a652ab4804ad59e189b))
+
 ## [2.2.6](https://github.com/nick-boss-studio/vterminal/compare/v2.2.5...v2.2.6) (2026-07-29)
 
 
