@@ -14,6 +14,7 @@ const {
   writeGitHubActionsGroup,
   endGitHubActionsGroup
 } = require("../lib/github-actions-output");
+const { ensureClaudeFolderTrusted } = require("../lib/claude-trust");
 
 const { values, positionals } = parseArgs({
   args: process.argv.slice(2),
@@ -98,6 +99,13 @@ let maxTimer = null;
 
 const env = { ...process.env, TERM: "xterm-256color" };
 if (token) env.GH_TOKEN = token;
+
+// claude 在全新目錄第一次啟動時會跳出 folder-trust 對話框；無人值守的 PTY
+// 貼上流程沒有人回應這個對話框，會導致空跑或卡到 --max timeout。啟動前先
+// 標記這個目錄為已信任，讓對話框根本不會出現。
+if (CLAUDE_BIN.toLowerCase() === "claude") {
+  ensureClaudeFolderTrusted(process.cwd());
+}
 
 const PTY_COLS = 140;
 const PTY_ROWS = 40;

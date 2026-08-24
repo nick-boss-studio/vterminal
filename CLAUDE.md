@@ -18,9 +18,10 @@ npm run release      # 手動觸發 semantic-release（正常情況由 CI 執行
 **運作流程：**
 
 1. 解析 CLI 參數：`positionals[0]` = command 名稱，`positionals.slice(1)` = 參數
-2. 透過 `@homebridge/node-pty-prebuilt-multiarch` 啟動 Claude CLI PTY session
-3. 等待 8 秒（讓 Claude CLI 完全載入）後，用 bracketed-paste escape sequence（`\x1b[200~` … `\x1b[201~`）將 `/<command> <params>` 貼入 PTY
-4. 監控輸出——輸出靜止超過 `--idle` ms（預設 60 秒）或總時間超過 `--max` ms（預設 600 秒）後，對 PTY 送 SIGTERM
+2. `--bin claude` 時，先呼叫 [lib/claude-trust.js](lib/claude-trust.js) 把目前工作目錄標記成已信任（`~/.claude.json` 的 `projects["<cwd>"].hasTrustDialogAccepted = true`），避免全新目錄第一次啟動時跳出 folder-trust 對話框卡住無人值守的 PTY 流程
+3. 透過 `@homebridge/node-pty-prebuilt-multiarch` 啟動 Claude CLI PTY session
+4. 等待 8 秒（讓 Claude CLI 完全載入）後，用 bracketed-paste escape sequence（`\x1b[200~` … `\x1b[201~`）將 `/<command> <params>` 貼入 PTY
+5. 監控輸出——輸出靜止超過 `--idle` ms（預設 60 秒）或總時間超過 `--max` ms（預設 600 秒）後，對 PTY 送 SIGTERM
 
 **關鍵計時常數：**
 - `8000 ms` — 送出指令前的啟動等待時間
