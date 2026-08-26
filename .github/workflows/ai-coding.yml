@@ -2,17 +2,35 @@ name: AI Coding
 
 on:
   issues:
-    types: [opened]
+    types: [opened, labeled]
   issue_comment:
     types: [created]
-
-permissions:
-  contents: write
-  issues: write
-  pull-requests: write
 
 jobs:
   ai-coding:
     name: "AI Coding - ${{ github.event.repository.name }}"
-    uses: nick-boss-studio/shared-actions/.github/workflows/reusable-ai-coding.yml@v2
-    secrets: inherit
+    concurrency:
+      group: ai-coding-${{ github.repository }}-${{ github.event.issue.number }}
+      cancel-in-progress: true
+    runs-on: [self-hosted, macOS, ARM64, yui]
+    timeout-minutes: 25
+    if: |
+      (github.event_name == 'issues' &&
+       ((github.event.action == 'labeled' && github.event.label.name == 'coding') ||
+        (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'coding')))) ||
+      (github.event_name == 'issue_comment' &&
+       !github.event.issue.pull_request &&
+       contains(github.event.issue.labels.*.name, 'coding') &&
+       github.event.comment.user.login != 'yuichen14' &&
+       contains(github.event.comment.body, '@yuichen14'))
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run AI Coding
+        run: vterminal coding ${{ github.event.issue.number }} --max 1200000
