@@ -66,6 +66,7 @@ vterminal simplify
 | `--idle` | 回應靜止多久後自動關閉（ms） | `60000` |
 | `--max` | 最長等待時間（ms），`0` 表示不限制 | `600000` |
 | `--bin` | CLI 執行檔名稱（透過 PATH 解析），僅允許 `claude`／`codex`／`agy` | `claude` |
+| `--no-auto-trust` | 停用自動信任目前目錄（見下方「資料夾信任（trust dialog）」） | 自動信任已開啟 |
 | `-h, --help` | 顯示說明 | — |
 | `-v, --version` | 顯示版本號 | — |
 
@@ -78,6 +79,15 @@ vterminal simplify
 | `CLAUDE_BIN` | CLI 執行檔名稱（透過 PATH 解析），同 `--bin` |
 | `RESPONSE_IDLE_MS` | 同 `--idle` |
 | `RESPONSE_MAX_MS` | 同 `--max` |
+| `VTERMINAL_NO_AUTO_TRUST` | 設為 `1`／`true` 同 `--no-auto-trust` |
+
+## 資料夾信任（trust dialog）
+
+vterminal 用 PTY 啟動 Claude Code，對 Claude 來說 stdout 一定是 TTY，因此官方文件裡「非互動模式會自動跳過資料夾信任對話框」的規則不會生效：只要目前目錄從沒被信任過（例如 CI 每次 checkout 出來的全新 `_work/<repo>` 目錄），Claude Code 啟動時就會卡在互動式的 trust dialog 等待輸入，導致指令空跑或卡到 `--idle`/`--max` timeout。
+
+`--bin` 為 `claude` 時，vterminal 預設會在啟動前自動把目前工作目錄（`process.cwd()`）寫入 `~/.claude.json` 的信任清單（`projects[cwd].hasTrustDialogAccepted = true`），已信任過的目錄不會重複寫入。多個 process 併發執行時用檔案鎖保護，避免同時寫入把 `~/.claude.json` 寫壞。
+
+若不希望 vterminal 自動修改 `~/.claude.json`，可加上 `--no-auto-trust`（或設定 `VTERMINAL_NO_AUTO_TRUST=1`）停用。停用後，若畫面上偵測到 trust dialog 的特徵字串，vterminal 仍會在 log 印出警告，方便除錯，但不會自動處理。
 
 ## 自動關閉機制
 

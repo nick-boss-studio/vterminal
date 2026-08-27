@@ -6,6 +6,7 @@
  * 待回應輸出靜止 idle ms 後關閉 session。
  */
 
+const os = require("node:os");
 const pty = require("@homebridge/node-pty-prebuilt-multiarch");
 const { Terminal } = require("@xterm/headless");
 const { parseArgs } = require("node:util");
@@ -14,6 +15,7 @@ const {
   writeGitHubActionsGroup,
   endGitHubActionsGroup
 } = require("../lib/github-actions-output");
+const { ensureCwdTrusted } = require("../lib/claude-trust");
 
 const { values, positionals } = parseArgs({
   args: process.argv.slice(2),
@@ -22,6 +24,7 @@ const { values, positionals } = parseArgs({
     idle: { type: "string" },
     max: { type: "string" },
     bin: { type: "string" },
+    "no-auto-trust": { type: "boolean" },
     help: { type: "boolean", short: "h" },
     version: { type: "boolean", short: "v" }
   },
@@ -46,12 +49,13 @@ Arguments:
   params   Arguments to pass to the command
 
 Options:
-  -t, --token    GitHub token (or set GH_TOKEN env var)
-      --idle     Response idle timeout in ms (default: 60000)
-      --max      Max total wait time in ms, 0 = unlimited (default: 600000)
-      --bin      CLI executable name, resolved via PATH: claude/codex/agy (default: "claude")
-  -h, --help     Show this help
-  -v, --version  Print version
+  -t, --token       GitHub token (or set GH_TOKEN env var)
+      --idle        Response idle timeout in ms (default: 60000)
+      --max         Max total wait time in ms, 0 = unlimited (default: 600000)
+      --bin         CLI executable name, resolved via PATH: claude/codex/agy (default: "claude")
+      --no-auto-trust  Don't auto-trust cwd in ~/.claude.json before launching Claude Code
+  -h, --help        Show this help
+  -v, --version     Print version
 
 Examples:
   vterminal code-review https://github.com/owner/repo/pull/42
@@ -99,6 +103,23 @@ let maxTimer = null;
 const env = { ...process.env, TERM: "xterm-256color" };
 if (token) env.GH_TOKEN = token;
 
+const noAutoTrust =
+  values["no-auto-trust"] || /^(1|true)$/i.test(process.env.VTERMINAL_NO_AUTO_TRUST || "");
+
+if (!noAutoTrust && /^claude$/i.test(CLAUDE_BIN)) {
+  try {
+    ensureCwdTrusted({
+      cwd: process.cwd(),
+      home: os.homedir(),
+      log: (msg) => writeGitHubActionsOutput(msg)
+    });
+  } catch (err) {
+    writeGitHubActionsOutput(`[auto-trust] 發生非預期錯誤，略過：${err.message}`, {
+      kind: "warning"
+    });
+  }
+}
+
 const PTY_COLS = 140;
 const PTY_ROWS = 40;
 
@@ -127,7 +148,19 @@ const STATUS_LINE_RE = /[↓↑]\s*[\d.]+k?\s*tokens\b/;
 const GRAY = "\x1b[90m";
 const RESET = "\x1b[0m";
 
+// 除錯保底：即使自動信任失敗（例如 ~/.claude.json 格式改變、鎖逾時等），
+// 至少要能在 log 明確看出卡在 trust dialog，而不是靜默空跑或單純等到 timeout。
+const TRUST_DIALOG_RE = /Do you trust the files in this (?:folder|workspace)/i;
+let trustDialogWarned = false;
+
 function emitLine(text) {
+  if (!trustDialogWarned && TRUST_DIALOG_RE.test(text)) {
+    trustDialogWarned = true;
+    writeGitHubActionsOutput(
+      "[auto-trust] 偵測到 Claude Code 資料夾信任對話框（trust dialog），本次指令可能會空跑或卡到 timeout。可確認 --no-auto-trust 是否被啟用，或手動檢查 ~/.claude.json。",
+      { kind: "warning" }
+    );
+  }
   const colored = STATUS_LINE_RE.test(text) ? `${GRAY}${text}${RESET}` : text;
   writeGitHubActionsOutput(colored, { preserveAnsi: true });
 }
