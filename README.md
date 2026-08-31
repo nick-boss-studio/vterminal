@@ -99,7 +99,7 @@ chore:/docs:/refactor: 等 → 不出版本
 2. 更新 `CHANGELOG.md` 與 `package.json`
 3. 建立 GitHub Release
 
-所需 secret：`GITHUB_TOKEN` 由 Actions 自動提供，不需手動設定。
+所需 secret：`NICK_BOSS_STUDIO_TOKEN`（org admin 的 Personal Access Token）。因為 `main` 有 branch ruleset 要求變更需透過 PR，而 ruleset 只允許 `OrganizationAdmin` 身分繞過，預設的 `GITHUB_TOKEN`（`github-actions[bot]`）不符合條件，semantic-release 直接 push 版本號到 `main` 會被拒絕，需改用具備 org admin 權限的 PAT 才能通過。
 
 ## License
 
