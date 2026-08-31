@@ -35,7 +35,9 @@ npm run release      # 手動觸發 semantic-release（正常情況由 CI 執行
 
 ## 發版
 
-合併到 `main` 會觸發 [.github/workflows/release.yml](.github/workflows/release.yml)，執行 semantic-release，自動更新 `package.json`、寫入 `CHANGELOG.md`、建立 GitHub Release。不發布到 npm，只需要 `GITHUB_TOKEN`（Actions 自動提供）。
+合併到 `main` 會觸發 [.github/workflows/release.yml](.github/workflows/release.yml)，執行 semantic-release，自動更新 `package.json`、寫入 `CHANGELOG.md`、建立 GitHub Release。不發布到 npm。
+
+**`NICK_BOSS_STUDIO_TOKEN` secret：** `main` 設有 branch ruleset，要求變更需透過 PR，且只允許 `OrganizationAdmin` 身分繞過。預設的 `GITHUB_TOKEN`（`github-actions[bot]`）不符合此條件，semantic-release 直接 push 版本號到 `main` 會被 GH013 拒絕。因此 `actions/checkout` 的 `token` 與 `npx semantic-release` 的 `GITHUB_TOKEN` env 都改用 `secrets.NICK_BOSS_STUDIO_TOKEN`（org admin 的 PAT）—— 前者決定 `git push` 的認證身分，後者供 `@semantic-release/github` 呼叫 API，兩處都要換才會生效。
 
 ### Commit 格式（Conventional Commits）
 
