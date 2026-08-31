@@ -1,3 +1,12 @@
+## [2.5.1](https://github.com/nick-boss-studio/vterminal/compare/v2.5.0...v2.5.1) (2026-08-31)
+
+
+### Bug Fixes
+
+* checkout 步驟改用 NICK_BOSS_STUDIO_TOKEN 才能真正繞過 branch ruleset ([#18](https://github.com/nick-boss-studio/vterminal/issues/18)) ([2f86309](https://github.com/nick-boss-studio/vterminal/commit/2f86309a184018124392474bd4b25d9f6da27d55))
+* release workflow 改用 NICK_BOSS_STUDIO_TOKEN 以繞過 branch ruleset ([#17](https://github.com/nick-boss-studio/vterminal/issues/17)) ([ddd2c39](https://github.com/nick-boss-studio/vterminal/commit/ddd2c39586c74002d6c694a1421be27082a1c3e7))
+* 將 AI workflow 從跨 repo reusable workflow 改為內嵌執行 ([#15](https://github.com/nick-boss-studio/vterminal/issues/15)) ([9b364d5](https://github.com/nick-boss-studio/vterminal/commit/9b364d53152d497bbd8d0980b55bc406cb8eb9c9))
+
 # [2.5.0](https://github.com/nick-boss-studio/vterminal/compare/v2.4.0...v2.5.0) (2026-07-29)
 
 
