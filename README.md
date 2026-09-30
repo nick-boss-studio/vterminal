@@ -104,3 +104,5 @@ chore:/docs:/refactor: 等 → 不出版本
 ## License
 
 MIT
+
+<!-- AI Coding v3 驗證 -->
