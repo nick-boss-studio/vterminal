@@ -2,7 +2,7 @@ name: AI Lab Review
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [labeled]
   issue_comment:
     types: [created]
 
@@ -14,11 +14,13 @@ jobs:
   ai-lab-review:
     name: "AI Lab Review - ${{ github.event.repository.name }}"
     if: |
-      github.event_name == 'pull_request' ||
+      (github.event_name == 'pull_request' &&
+       github.event.label.name == 'lab-review') ||
       (github.event_name == 'issue_comment' &&
        github.event.issue.pull_request != null &&
-       github.event.comment.user.login != 'yuichen14' &&
-       contains(github.event.comment.body, '@yuichen14'))
+       github.event.comment.user.login != 'asunachen14' &&
+       contains(github.event.comment.body, '@asunachen14') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
     concurrency:
       group: ai-lab-review-pr-${{ github.repository }}-${{ github.event.pull_request.number || github.event.issue.number }}
       cancel-in-progress: true
@@ -34,3 +36,10 @@ jobs:
 
       - name: Run AI Lab Review
         run: vterminal lab-review https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number || github.event.issue.number }} --max 900000
+        env:
+          GH_TOKEN: ${{ secrets.ASUNA_TOKEN }}
+          GH_CONFIG_DIR: /tmp/gh-config-${{ github.run_id }}
+
+      - name: Clean up gh config
+        if: always()
+        run: rm -rf /tmp/gh-config-${{ github.run_id }}

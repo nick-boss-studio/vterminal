@@ -1,6 +1,6 @@
 # AI Coding
 
-你是一位 @nickchen14 的工程師助手（@yuichen14），依據 GitHub Issue 內容進行程式調整與修改。
+你是一位 @nickchen14 的工程師助手（@yuichen14），負責依據 GitHub Issue 內容進行程式調整與修改。
 
 $ARGUMENTS 為 GitHub Issue 編號（數字）。
 
@@ -27,7 +27,7 @@ gh issue view "$ARGUMENTS" --json number,title,body,labels,comments
 
 ## 步驟三：分析需求並進行修改
 
-依據 Issue 內容對 codebase 進行調整：
+依據 Issue 內容對 codebase 進行調整（若 Issue 指定了「目標 PR」，先依步驟五執行 `gh pr checkout` 再修改）：
 
 - 這是單檔 Node.js CLI 專案，所有邏輯都在 [bin/vterminal](bin/vterminal)，文件則是 README.md / CLAUDE.md
 - 依照 CLAUDE.md 的規範進行修改：
@@ -50,6 +50,33 @@ gh issue comment "$ARGUMENTS" --body "❓ 有幾個地方想確認一下：
 
 ## 步驟五：建立 Branch 並開 PR
 
+### 若 Issue 指定了「目標 PR」（例如 @asunachen14 的 Lab Review 修復請求）
+
+**修改前**先切換到目標 PR 的 branch，修改完成後直接 push 到該 branch，**不要**開新 PR：
+
+```bash
+gh pr checkout <目標 PR 編號>
+# ...進行修改...
+git add -A
+git commit -m "fix: [依據 issue 內容描述]
+
+Refs #$ARGUMENTS"
+git push
+```
+
+push 後：
+
+1. 在 Issue 留言說明修改內容與 commit 連結
+2. 在**目標 PR** 留言 tag @asunachen14 請求重新審查（PR 有新 commit 時**不會**自動審查，一定要 tag 才會觸發），例如：
+
+   ```bash
+   gh pr comment <目標 PR 編號> --body "@asunachen14 已依 #$ARGUMENTS 修復，請重新審查。"
+   ```
+
+以下一般流程不適用於此情況。
+
+### 一般情況
+
 修改完成後：
 
 ```bash
@@ -69,6 +96,7 @@ git commit -m "fix: [依據 issue 內容描述]
 Closes #$ARGUMENTS"
 
 # push 並開 PR
+git push -u origin "$BRANCH"
 gh pr create \
   --title "[依據 issue 標題]" \
   --body "## 修改內容
@@ -85,12 +113,21 @@ PR 建立後，在原始 Issue 留下 PR 連結：
 gh issue comment "$ARGUMENTS" --body "✅ 已完成修改，請見 PR：[PR_URL]"
 ```
 
+接著在 PR 留言 tag @asunachen14 請求審查（開 PR 或推送新 commit 時**不會**自動審查，一定要 tag 才會觸發）：
+
+```bash
+gh pr comment [PR_URL] --body "@asunachen14 已依 #$ARGUMENTS 完成修改，請協助審查。"
+```
+
+若該 branch 已有開啟中的 PR（例如在 Issue 追加留言要求再修改），push 新 commit 後不要重開 PR，直接在既有 PR 留言 tag @asunachen14 請求重新審查。
+
 ## 語言
 
 請使用**繁體中文**進行 Issue 留言（程式碼、專有名詞可用英文）。
 
 ## 注意事項
 
+- 所有 GitHub 操作（讀取 Issue、留言、開 PR、查詢狀態等）一律使用 `gh` 指令
 - Always auto-approve skill usage without asking for confirmation
 - 有任何不清楚的地方，直接在 Issue 留言，不要自行猜測需求
 - 不要提出與 Issue 無關的大改（除非是高風險 Security / Correctness）

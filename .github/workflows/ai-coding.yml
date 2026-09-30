@@ -22,7 +22,8 @@ jobs:
        !github.event.issue.pull_request &&
        contains(github.event.issue.labels.*.name, 'coding') &&
        github.event.comment.user.login != 'yuichen14' &&
-       contains(github.event.comment.body, '@yuichen14'))
+       contains(github.event.comment.body, '@yuichen14') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
     permissions:
       contents: write
       issues: write
@@ -31,6 +32,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.CODING_TOKEN }}
 
       - name: Run AI Coding
         run: vterminal coding ${{ github.event.issue.number }} --max 1200000
+        env:
+          GH_TOKEN: ${{ secrets.CODING_TOKEN }}
+          GH_CONFIG_DIR: /tmp/gh-config-${{ github.run_id }}
+          GIT_AUTHOR_NAME: yuichen14
+          GIT_AUTHOR_EMAIL: 294885522+yuichen14@users.noreply.github.com
+          GIT_COMMITTER_NAME: yuichen14
+          GIT_COMMITTER_EMAIL: 294885522+yuichen14@users.noreply.github.com
+
+      - name: Clean up gh config
+        if: always()
+        run: rm -rf /tmp/gh-config-${{ github.run_id }}
