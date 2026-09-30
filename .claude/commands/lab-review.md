@@ -48,7 +48,7 @@ gh pr comment "$ARGUMENTS" --body "已收到 Code Review 需求，正在進行�
    cat > "$REPORT_FILE" <<'EOF'
    <Standards + Spec 報告內容>
    EOF
-   gh pr comment "$ARGUMENTS" --body-file "$REPORT_FILE"
+   gh pr review "$ARGUMENTS" --comment --body-file "$REPORT_FILE"
    rm -f "$REPORT_FILE"
    ```
 
