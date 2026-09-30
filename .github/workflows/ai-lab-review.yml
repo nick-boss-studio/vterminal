@@ -25,7 +25,7 @@ jobs:
       group: ai-lab-review-pr-${{ github.repository }}-${{ github.event.pull_request.number || github.event.issue.number }}
       cancel-in-progress: true
 
-    runs-on: [self-hosted, macOS, ARM64, yui]
+    runs-on: [self-hosted, macOS, ARM64, asuna]
     timeout-minutes: 20
 
     steps:

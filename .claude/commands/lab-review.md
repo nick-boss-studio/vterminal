@@ -41,7 +41,7 @@ gh pr comment "$ARGUMENTS" --body "已收到 Code Review 需求，正在進行�
      - **文件一致性**：README.md / CLAUDE.md 是否因程式碼變更而過時（旗標、範例指令等）
 4. 取得 skill 產出的 Standards / Spec 報告後，先寫入**獨一無二**的暫存檔，再用 `--body-file` 貼回該 PR：
    - 報告內容可能含反引號、`$()`、多行 Markdown，避免直接內插進雙引號字串造成 shell 解析問題。
-   - `yui` 這組 self-hosted runner label 未來可能會加機器，屆時不同 PR 的審查有機會並行、共用同一個 `/tmp`；固定檔名有跨 PR 讀到殘留舊內容的風險，用 `mktemp` 產生獨立檔名一開始就避開這個問題。
+   - `asuna` 這組 self-hosted runner label 未來可能會加機器，屆時不同 PR 的審查有機會並行、共用同一個 `/tmp`；固定檔名有跨 PR 讀到殘留舊內容的風險，用 `mktemp` 產生獨立檔名一開始就避開這個問題。
 
    ```bash
    REPORT_FILE=$(mktemp /tmp/lab-review-report.XXXXXX.md)
