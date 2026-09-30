@@ -104,3 +104,5 @@ chore:/docs:/refactor: 等 → 不出版本
 ## License
 
 MIT
+
+<!-- AI workflow v3 驗證用測試變更，PR 不會 merge -->
