@@ -93,6 +93,7 @@ const responseMaxMs = Number(values.max || process.env.RESPONSE_MAX_MS) || 60000
 
 let shouldCloseAfterIdle = false;
 let didAutoClose = false;
+let submitFailed = false;
 let idleTimer = null;
 let maxTimer = null;
 
@@ -199,7 +200,7 @@ shell.onExit(({ exitCode }) => {
   clearInterval(previewTimer);
   const finish = () => {
     endGitHubActionsGroup();
-    process.exit(didAutoClose ? 0 : (exitCode ?? 0));
+    process.exit(submitFailed ? 1 : didAutoClose ? 0 : (exitCode ?? 0));
   };
   if (process.stdout.isTTY) {
     finish();
@@ -214,6 +215,68 @@ function pasteAndSubmit(text) {
   shell.write("\x1b[201~");
   setTimeout(() => shell.write("\n"), 300);
   setTimeout(() => shell.write("\r"), 800);
+}
+
+// 送出成功的訊號：輸入框清空（不再看到剛貼上的指令文字），或畫面出現
+// 執行中的輸出（⏺ 標記、忙碌狀態列的 spinner/token 數）。只掃描尚未
+// flush 的「即時」區段（flushedRow 之後），避免輸出捲動後舊的歷史行
+// 一直被誤判成「還沒送出」。
+function isPromptSubmitted() {
+  const buffer = term.buffer.active;
+  let hasExecutionSignal = false;
+  let inputBoxHasCommand = false;
+  // claudeCommand 長度不固定，可能超過 PTY_COLS 而被 xterm 換行成多個實體
+  // row。用 isWrapped 旗標把被換行的連續 row 接回原始邏輯行，再比對完整
+  // 字串，避免單一 row 的片段比對永遠對不上完整的 claudeCommand。
+  //
+  // flushedRow 只是畫面捲動／已印出的邊界，不代表邏輯行邊界：如果
+  // flushedRow 本身落在某個邏輯行的 wrapped 接續列中間，該邏輯行前半段
+  // 可能落在 flushedRow 之前（已 flush，但 buffer 內容還在，只是印過
+  // 了）。往前找到這個邏輯行真正的起始 row 再開始重建 logicalText，避免
+  // 從接續列中間比對、永遠截斷不到完整的 claudeCommand。
+  let scanStart = flushedRow;
+  while (scanStart > 0 && buffer.getLine(scanStart) && buffer.getLine(scanStart).isWrapped) {
+    scanStart--;
+  }
+  let logicalText = "";
+  for (let i = scanStart; i < buffer.length; i++) {
+    const line = buffer.getLine(i);
+    const text = line ? line.translateToString(true) : "";
+    if (i >= flushedRow && (text.includes("⏺") || STATUS_LINE_RE.test(text))) {
+      hasExecutionSignal = true;
+    }
+    logicalText = line && line.isWrapped ? logicalText + text : text;
+    if (logicalText.includes(claudeCommand)) inputBoxHasCommand = true;
+  }
+  return hasExecutionSignal || !inputBoxHasCommand;
+}
+
+const SUBMIT_VERIFY_DELAY_MS = 4000;
+const SUBMIT_MAX_RETRIES = 3;
+
+function verifySubmission(retriesLeft) {
+  // term.write("", cb) 會等內部佇列清空後才回呼，確保讀到的 buffer
+  // 已經涵蓋目前收到的所有 PTY 輸出。
+  term.write("", () => {
+    if (isPromptSubmitted()) {
+      closeWhenResponseIsIdle();
+      return;
+    }
+    if (retriesLeft <= 0) {
+      submitFailed = true;
+      writeGitHubActionsOutput(
+        `[submit] prompt not submitted after ${SUBMIT_MAX_RETRIES} retries`,
+        { kind: "error", stream: "stderr" }
+      );
+      closeTerminal();
+      return;
+    }
+    writeGitHubActionsOutput(
+      `[submit] prompt not confirmed yet, retrying (${retriesLeft} attempt(s) left)`
+    );
+    shell.write("\r");
+    setTimeout(() => verifySubmission(retriesLeft - 1), SUBMIT_VERIFY_DELAY_MS);
+  });
 }
 
 function closeTerminal() {
@@ -255,5 +318,5 @@ function closeWhenResponseIsIdle() {
 
 setTimeout(() => {
   pasteAndSubmit(claudeCommand);
-  setTimeout(closeWhenResponseIsIdle, 1200);
+  setTimeout(() => verifySubmission(SUBMIT_MAX_RETRIES), SUBMIT_VERIFY_DELAY_MS);
 }, 8000);
