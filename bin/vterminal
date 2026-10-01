@@ -228,11 +228,23 @@ function isPromptSubmitted() {
   // claudeCommand 長度不固定，可能超過 PTY_COLS 而被 xterm 換行成多個實體
   // row。用 isWrapped 旗標把被換行的連續 row 接回原始邏輯行，再比對完整
   // 字串，避免單一 row 的片段比對永遠對不上完整的 claudeCommand。
+  //
+  // flushedRow 只是畫面捲動／已印出的邊界，不代表邏輯行邊界：如果
+  // flushedRow 本身落在某個邏輯行的 wrapped 接續列中間，該邏輯行前半段
+  // 可能落在 flushedRow 之前（已 flush，但 buffer 內容還在，只是印過
+  // 了）。往前找到這個邏輯行真正的起始 row 再開始重建 logicalText，避免
+  // 從接續列中間比對、永遠截斷不到完整的 claudeCommand。
+  let scanStart = flushedRow;
+  while (scanStart > 0 && buffer.getLine(scanStart) && buffer.getLine(scanStart).isWrapped) {
+    scanStart--;
+  }
   let logicalText = "";
-  for (let i = flushedRow; i < buffer.length; i++) {
+  for (let i = scanStart; i < buffer.length; i++) {
     const line = buffer.getLine(i);
     const text = line ? line.translateToString(true) : "";
-    if (text.includes("⏺") || STATUS_LINE_RE.test(text)) hasExecutionSignal = true;
+    if (i >= flushedRow && (text.includes("⏺") || STATUS_LINE_RE.test(text))) {
+      hasExecutionSignal = true;
+    }
     logicalText = line && line.isWrapped ? logicalText + text : text;
     if (logicalText.includes(claudeCommand)) inputBoxHasCommand = true;
   }
