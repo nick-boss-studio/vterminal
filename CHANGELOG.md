@@ -1,3 +1,10 @@
+## [2.5.2](https://github.com/nick-boss-studio/vterminal/compare/v2.5.1...v2.5.2) (2026-10-01)
+
+
+### Bug Fixes
+
+* prompt 送出後確認是否生效，未送出就重試並以非 0 結束 ([#30](https://github.com/nick-boss-studio/vterminal/issues/30)) ([e189106](https://github.com/nick-boss-studio/vterminal/commit/e189106bd8a44a953cc96e6664f857235cb7daac)), closes [#29](https://github.com/nick-boss-studio/vterminal/issues/29) [#31](https://github.com/nick-boss-studio/vterminal/issues/31)
+
 ## [2.5.1](https://github.com/nick-boss-studio/vterminal/compare/v2.5.0...v2.5.1) (2026-08-31)
 
 
