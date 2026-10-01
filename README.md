@@ -83,6 +83,10 @@ vterminal simplify
 
 vterminal 在送出指令後會監控輸出，當輸出靜止超過 `--idle` 設定的時間時自動關閉 session。若整體時間超過 `--max`，也會強制關閉。
 
+## 送出確認與重試
+
+貼上指令後，vterminal 會確認 prompt 是否真的送出（畫面出現執行中的輸出，或輸入框已清空）；若偶發 Enter 沒有生效，會自動重送，最多重試 3 次。重試後仍未送出時，vterminal 會印出 `[submit] prompt not submitted after 3 retries` 並以非 0 exit code 結束，讓呼叫端（例如 GitHub Actions）能正確判斷為失敗，而不會被誤判成 idle 後的正常關閉。
+
 ## 開發與發版
 
 本專案使用 [semantic-release](https://semantic-release.gitbook.io) 自動管理版本，commit 訊息請遵循 [Conventional Commits](https://www.conventionalcommits.org) 格式。**冒號後必須有空格**，否則不會觸發版本更新。

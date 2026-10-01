@@ -93,6 +93,7 @@ const responseMaxMs = Number(values.max || process.env.RESPONSE_MAX_MS) || 60000
 
 let shouldCloseAfterIdle = false;
 let didAutoClose = false;
+let submitFailed = false;
 let idleTimer = null;
 let maxTimer = null;
 
@@ -199,7 +200,7 @@ shell.onExit(({ exitCode }) => {
   clearInterval(previewTimer);
   const finish = () => {
     endGitHubActionsGroup();
-    process.exit(didAutoClose ? 0 : (exitCode ?? 0));
+    process.exit(submitFailed ? 1 : didAutoClose ? 0 : (exitCode ?? 0));
   };
   if (process.stdout.isTTY) {
     finish();
@@ -214,6 +215,51 @@ function pasteAndSubmit(text) {
   shell.write("\x1b[201~");
   setTimeout(() => shell.write("\n"), 300);
   setTimeout(() => shell.write("\r"), 800);
+}
+
+// 送出成功的訊號：輸入框清空（不再看到剛貼上的指令文字），或畫面出現
+// 執行中的輸出（⏺ 標記、忙碌狀態列的 spinner/token 數）。只掃描尚未
+// flush 的「即時」區段（flushedRow 之後），避免輸出捲動後舊的歷史行
+// 一直被誤判成「還沒送出」。
+function isPromptSubmitted() {
+  const buffer = term.buffer.active;
+  let hasExecutionSignal = false;
+  let inputBoxHasCommand = false;
+  for (let i = flushedRow; i < buffer.length; i++) {
+    const line = buffer.getLine(i);
+    const text = line ? line.translateToString(true) : "";
+    if (text.includes("⏺") || STATUS_LINE_RE.test(text)) hasExecutionSignal = true;
+    if (text.includes(claudeCommand)) inputBoxHasCommand = true;
+  }
+  return hasExecutionSignal || !inputBoxHasCommand;
+}
+
+const SUBMIT_VERIFY_DELAY_MS = 4000;
+const SUBMIT_MAX_RETRIES = 3;
+
+function verifySubmission(retriesLeft) {
+  // term.write("", cb) 會等內部佇列清空後才回呼，確保讀到的 buffer
+  // 已經涵蓋目前收到的所有 PTY 輸出。
+  term.write("", () => {
+    if (isPromptSubmitted()) {
+      closeWhenResponseIsIdle();
+      return;
+    }
+    if (retriesLeft <= 0) {
+      submitFailed = true;
+      writeGitHubActionsOutput(
+        `[submit] prompt not submitted after ${SUBMIT_MAX_RETRIES} retries`,
+        { kind: "error", stream: "stderr" }
+      );
+      closeTerminal();
+      return;
+    }
+    writeGitHubActionsOutput(
+      `[submit] prompt not confirmed yet, retrying (${retriesLeft} attempt(s) left)`
+    );
+    shell.write("\r");
+    setTimeout(() => verifySubmission(retriesLeft - 1), SUBMIT_VERIFY_DELAY_MS);
+  });
 }
 
 function closeTerminal() {
@@ -255,5 +301,5 @@ function closeWhenResponseIsIdle() {
 
 setTimeout(() => {
   pasteAndSubmit(claudeCommand);
-  setTimeout(closeWhenResponseIsIdle, 1200);
+  setTimeout(() => verifySubmission(SUBMIT_MAX_RETRIES), SUBMIT_VERIFY_DELAY_MS);
 }, 8000);

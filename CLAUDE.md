@@ -20,16 +20,27 @@ npm run release      # 手動觸發 semantic-release（正常情況由 CI 執行
 1. 解析 CLI 參數：`positionals[0]` = command 名稱，`positionals.slice(1)` = 參數
 2. 透過 `@homebridge/node-pty-prebuilt-multiarch` 啟動 Claude CLI PTY session
 3. 等待 8 秒（讓 Claude CLI 完全載入）後，用 bracketed-paste escape sequence（`\x1b[200~` … `\x1b[201~`）將 `/<command> <params>` 貼入 PTY
-4. 監控輸出——輸出靜止超過 `--idle` ms（預設 60 秒）或總時間超過 `--max` ms（預設 600 秒）後，對 PTY 送 SIGTERM
+4. 確認 prompt 是否真的送出（見下方「送出確認」），沒送出就重送，重試用盡仍失敗則以非 0 exit code 結束
+5. 確認送出後開始監控輸出——輸出靜止超過 `--idle` ms（預設 60 秒）或總時間超過 `--max` ms（預設 600 秒）後，對 PTY 送 SIGTERM
 
 **關鍵計時常數：**
 - `8000 ms` — 送出指令前的啟動等待時間
-- `1200 ms` — 送出指令後，開始監控 idle 前的額外等待
 - `300 ms / 800 ms` — bracketed paste 後，分批送出換行與 return 的間隔
+- `4000 ms`（`SUBMIT_VERIFY_DELAY_MS`）— 送出後等待多久才檢查是否已送出／重送
+- `3`（`SUBMIT_MAX_RETRIES`）— 送出確認失敗時的最大重試次數
+
+**送出確認（`isPromptSubmitted` / `verifySubmission`）：**
+
+對應 Claude CLI 偶發「prompt 貼入輸入框後 Enter 沒生效」的狀況（prompt 一直卡在輸入框，直到 idle 逾時才被當成 success 關閉）。貼上文字並送出換行後，等 `SUBMIT_VERIFY_DELAY_MS`，掃描 headless terminal 中尚未 flush 的即時區段（`flushedRow` 之後）：
+- 送出成功的訊號：出現 `⏺`（執行中標記）或忙碌狀態列（`STATUS_LINE_RE`），或是輸入框已清空（畫面不再出現剛貼上的指令文字）
+- 未送出就再送一次 `\r` 重試，最多 `SUBMIT_MAX_RETRIES` 次
+- 重試用盡仍未送出 → 設定 `submitFailed = true` 並關閉 terminal，process 以 exit code `1` 結束，log 印出 `[submit] prompt not submitted after N retries`（GitHub Actions `::error::` annotation）
+- 確認送出成功才會呼叫 `closeWhenResponseIsIdle()` 開始 idle 監控
 
 **自動關閉狀態機：**
 - `shouldCloseAfterIdle` — 控制輸出資料是否重置 idle timer
-- `didAutoClose` — 防止重複關閉；也確保自動關閉時 process 以 exit code 0 結束
+- `didAutoClose` — 防止重複關閉；一般情況下也確保自動關閉時 process 以 exit code 0 結束
+- `submitFailed` — 優先於 `didAutoClose`：一旦送出確認失敗，無論如何關閉都以 exit code 1 結束
 
 **Token 處理：** `GH_TOKEN` / `GH_PACKAGES_TOKEN` 會轉入 PTY 環境變數。只有 `command === "code-review"` 時才強制要求 token。
 
