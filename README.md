@@ -83,6 +83,8 @@ vterminal simplify
 
 vterminal 在送出指令後會監控輸出，當輸出靜止超過 `--idle` 設定的時間時自動關閉 session。若整體時間超過 `--max`，也會強制關閉。
 
+送出指令後，vterminal 會確認輸入框是否已清空；若偵測到指令沒有實際送出（例如 Enter 被選單攔截），會自動重試最多 3 次。重試後仍未送出，vterminal 會以非 0 exit code 結束並印出錯誤訊息，不會誤判為成功。
+
 ## 開發與發版
 
 本專案使用 [semantic-release](https://semantic-release.gitbook.io) 自動管理版本，commit 訊息請遵循 [Conventional Commits](https://www.conventionalcommits.org) 格式。**冒號後必須有空格**，否則不會觸發版本更新。

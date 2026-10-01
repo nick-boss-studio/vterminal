@@ -93,8 +93,10 @@ const responseMaxMs = Number(values.max || process.env.RESPONSE_MAX_MS) || 60000
 
 let shouldCloseAfterIdle = false;
 let didAutoClose = false;
+let submitFailed = false;
 let idleTimer = null;
 let maxTimer = null;
+let submitVerifyTimer = null;
 
 const env = { ...process.env, TERM: "xterm-256color" };
 if (token) env.GH_TOKEN = token;
@@ -199,6 +201,9 @@ shell.onExit(({ exitCode }) => {
   clearInterval(previewTimer);
   const finish = () => {
     endGitHubActionsGroup();
+    if (submitFailed) {
+      process.exit(1);
+    }
     process.exit(didAutoClose ? 0 : (exitCode ?? 0));
   };
   if (process.stdout.isTTY) {
@@ -208,12 +213,48 @@ shell.onExit(({ exitCode }) => {
   }
 });
 
-function pasteAndSubmit(text) {
+function pasteCommand(text) {
   shell.write("\x1b[200~");
   shell.write(text);
   shell.write("\x1b[201~");
-  setTimeout(() => shell.write("\n"), 300);
-  setTimeout(() => shell.write("\r"), 800);
+}
+
+function sendEnter() {
+  shell.write("\n");
+  setTimeout(() => shell.write("\r"), 500);
+}
+
+// Claude Code 輸入框有文字時，畫面會顯示 "ctrl+g to edit in VS Code" 提示；
+// 送出成功後輸入框清空，提示隨之消失，用這個訊號判斷 Enter 有沒有生效。
+const SUBMIT_HINT_RE = /to edit in VS Code/;
+const SUBMIT_CHECK_DELAY_MS = 4000;
+const SUBMIT_MAX_ATTEMPTS = 3;
+let submitAttempts = 0;
+
+function isSubmitPending() {
+  const buffer = term.buffer.active;
+  for (let i = buffer.baseY; i < buffer.length; i++) {
+    const line = buffer.getLine(i);
+    if (line && SUBMIT_HINT_RE.test(line.translateToString(true))) return true;
+  }
+  return false;
+}
+
+function verifySubmit() {
+  if (!isSubmitPending()) {
+    setTimeout(closeWhenResponseIsIdle, 1200);
+    return;
+  }
+  if (submitAttempts >= SUBMIT_MAX_ATTEMPTS) {
+    writeGitHubActionsOutput(`[submit] prompt not submitted after ${SUBMIT_MAX_ATTEMPTS} retries`);
+    submitFailed = true;
+    closeTerminal();
+    return;
+  }
+  submitAttempts++;
+  writeGitHubActionsOutput(`[submit] prompt not submitted yet, retrying (${submitAttempts}/${SUBMIT_MAX_ATTEMPTS})...`);
+  sendEnter();
+  submitVerifyTimer = setTimeout(verifySubmit, SUBMIT_CHECK_DELAY_MS);
 }
 
 function closeTerminal() {
@@ -222,6 +263,7 @@ function closeTerminal() {
   didAutoClose = true;
   clearTimeout(idleTimer);
   clearTimeout(maxTimer);
+  clearTimeout(submitVerifyTimer);
   writeGitHubActionsOutput("[auto-close] closing terminal...");
   try {
     shell.kill("SIGTERM");
@@ -254,6 +296,15 @@ function closeWhenResponseIsIdle() {
 }
 
 setTimeout(() => {
-  pasteAndSubmit(claudeCommand);
-  setTimeout(closeWhenResponseIsIdle, 1200);
+  pasteCommand(claudeCommand);
+  setTimeout(() => {
+    sendEnter();
+    if (process.stdout.isTTY) {
+      // TTY 模式下 headless terminal buffer 不會同步更新（見 shell.onData），
+      // 無法判斷送出狀態，維持原本單次送出行為。
+      setTimeout(closeWhenResponseIsIdle, 1200);
+    } else {
+      submitVerifyTimer = setTimeout(verifySubmit, SUBMIT_CHECK_DELAY_MS);
+    }
+  }, 300);
 }, 8000);
