@@ -10,7 +10,7 @@ npm run release      # 手動觸發 semantic-release（正常情況由 CI 執行
 npm test             # 執行 test/ 下的 node:test 測試
 ```
 
-沒有 lint。CI 不跑測試。唯一的執行時期檔案是 `bin/vterminal`。
+沒有 lint。PR 與 push 到 `main` 時，[.github/workflows/test.yml](.github/workflows/test.yml) 會在 ubuntu／macOS × Node 22／24 跑 `npm test`。唯一的執行時期檔案是 `bin/vterminal`。
 
 `test/vterminal.test.js` 是 vterminal 的整合測試：在暫存目錄寫入假的 `claude`／`codex` 執行檔（node script），把該目錄加到 `PATH` 最前面，再透過真的 PTY 執行 `bin/vterminal`，依據 exit code 與輸出做斷言。假 CLI 的行為由 `FAKE_CLI_MODE` 環境變數控制。
 
