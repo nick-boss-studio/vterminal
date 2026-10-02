@@ -236,7 +236,7 @@ function hasResponseStarted() {
 }
 
 const RESPONSE_START_POLL_MS = 1000;
-const RESPONSE_START_TIMEOUT_MS = 120000;
+const RESPONSE_START_TIMEOUT_MS = Number(process.env.RESPONSE_START_TIMEOUT_MS) || 120000;
 let startTimer = null;
 
 function markResponseStarted() {

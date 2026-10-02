@@ -7,9 +7,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 npm install          # 安裝相依套件（包含 node-pty 原生編譯）
 npm run release      # 手動觸發 semantic-release（正常情況由 CI 執行）
+npm test             # 執行 test/ 下的 node:test 測試
 ```
 
-沒有設定測試或 lint。唯一的執行時期檔案是 `bin/vterminal`。
+沒有 lint。CI 不跑測試。唯一的執行時期檔案是 `bin/vterminal`。
+
+`test/vterminal.test.js` 是 vterminal 的整合測試：在暫存目錄寫入假的 `claude`／`codex` 執行檔（node script），把該目錄加到 `PATH` 最前面，再透過真的 PTY 執行 `bin/vterminal`，依據 exit code 與輸出做斷言。假 CLI 的行為由 `FAKE_CLI_MODE` 環境變數控制。
 
 ## 架構
 
@@ -26,7 +29,7 @@ npm run release      # 手動觸發 semantic-release（正常情況由 CI 執行
 
 **回應啟動偵測（`hasResponseStarted`，僅 `--bin claude`）：**
 - 每 `RESPONSE_START_POLL_MS`（1000 ms）掃描 headless terminal 尚未 flush 的即時區段（`flushedRow` 之後），出現 `⏺`（執行中標記）或忙碌狀態列（`STATUS_LINE_RE`）即視為回應已開始，呼叫 `closeWhenResponseIsIdle()`
-- 超過 `RESPONSE_START_TIMEOUT_MS`（120000 ms）仍未開始 → 關閉 terminal
+- 超過 `RESPONSE_START_TIMEOUT_MS`（預設 120000 ms，可用同名環境變數覆寫）仍未開始 → 關閉 terminal
 - CLI 提早退出也算未開始。例如目錄未被信任時會跳出信任對話框，而帶初始 prompt 時預設選項是「No, exit」
 - 未開始就結束時，log 印出 `[start] response never started ...`（GitHub Actions `::error::` annotation），process 以 exit code `1` 結束
 - codex/agy 沒有可靠的畫面特徵，spawn 後直接視為已開始
