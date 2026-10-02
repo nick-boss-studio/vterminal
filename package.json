@@ -1,6 +1,6 @@
 {
   "name": "vterminal",
-  "version": "2.5.2",
+  "version": "2.5.3",
   "description": "Run AI CLI skills and slash commands from the terminal via PTY",
   "bin": {
     "vterminal": "./bin/vterminal"

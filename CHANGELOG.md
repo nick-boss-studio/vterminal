@@ -1,3 +1,10 @@
+## [2.5.3](https://github.com/nick-boss-studio/vterminal/compare/v2.5.2...v2.5.3) (2026-10-02)
+
+
+### Bug Fixes
+
+* 指令改以初始 prompt 參數啟動 CLI，取代貼上 + Enter ([#32](https://github.com/nick-boss-studio/vterminal/issues/32)) ([1055c35](https://github.com/nick-boss-studio/vterminal/commit/1055c35b1d6935967b8a094d48a21cd9111da665))
+
 ## [2.5.2](https://github.com/nick-boss-studio/vterminal/compare/v2.5.1...v2.5.2) (2026-10-01)
 
 
