@@ -18,29 +18,24 @@ npm run release      # 手動觸發 semantic-release（正常情況由 CI 執行
 **運作流程：**
 
 1. 解析 CLI 參數：`positionals[0]` = command 名稱，`positionals.slice(1)` = 參數
-2. 透過 `@homebridge/node-pty-prebuilt-multiarch` 啟動 Claude CLI PTY session
-3. 等待 8 秒（讓 Claude CLI 完全載入）後，用 bracketed-paste escape sequence（`\x1b[200~` … `\x1b[201~`）將 `/<command> <params>` 貼入 PTY
-4. 確認 prompt 是否真的送出（見下方「送出確認」），沒送出就重送，重試用盡仍失敗則以非 0 exit code 結束
-5. 確認送出後開始監控輸出——輸出靜止超過 `--idle` ms（預設 60 秒）或總時間超過 `--max` ms（預設 600 秒）後，對 PTY 送 SIGTERM
+2. 透過 `@homebridge/node-pty-prebuilt-multiarch` 啟動 Claude CLI PTY session，並把 `/<command> <params>` 直接當成初始 prompt 參數傳入（等同 `claude "/<command> <params>"`），由 CLI 自己在 TUI 就緒後送出
+3. 偵測回應是否開始（見下方「回應啟動偵測」），開始後才進入 idle 監控
+4. 輸出靜止超過 `--idle` ms（預設 60 秒）或總時間超過 `--max` ms（預設 600 秒）後，對 PTY 送 SIGTERM
 
-**關鍵計時常數：**
-- `8000 ms` — 送出指令前的啟動等待時間
-- `300 ms / 800 ms` — bracketed paste 後，分批送出換行與 return 的間隔
-- `4000 ms`（`SUBMIT_VERIFY_DELAY_MS`）— 送出後等待多久才檢查是否已送出／重送
-- `3`（`SUBMIT_MAX_RETRIES`）— 送出確認失敗時的最大重試次數
+**為什麼不用貼上 + Enter：** 舊做法是固定等 8 秒後用 bracketed paste 貼入指令再送 Enter，但 TUI 不一定已就緒，貼上內容或 Enter 會被延遲／吃掉，指令卡在輸入框直到 idle 逾時被當成 success。改成初始 prompt 參數後由 CLI 負責送出，沒有時序競爭。參數以陣列傳給 `pty.spawn`，不經 shell，不需跳脫。
 
-**送出確認（`isPromptSubmitted` / `verifySubmission`）：**
-
-對應 Claude CLI 偶發「prompt 貼入輸入框後 Enter 沒生效」的狀況（prompt 一直卡在輸入框，直到 idle 逾時才被當成 success 關閉）。貼上文字並送出換行後，等 `SUBMIT_VERIFY_DELAY_MS`，掃描 headless terminal 中尚未 flush 的即時區段（`flushedRow` 之後）：
-- 送出成功的訊號：出現 `⏺`（執行中標記）或忙碌狀態列（`STATUS_LINE_RE`），或是輸入框已清空（畫面不再出現剛貼上的指令文字）
-- 未送出就再送一次 `\r` 重試，最多 `SUBMIT_MAX_RETRIES` 次
-- 重試用盡仍未送出 → 設定 `submitFailed = true` 並關閉 terminal，process 以 exit code `1` 結束，log 印出 `[submit] prompt not submitted after N retries`（GitHub Actions `::error::` annotation）
-- 確認送出成功才會呼叫 `closeWhenResponseIsIdle()` 開始 idle 監控
+**回應啟動偵測（`hasResponseStarted`，僅 `--bin claude`）：**
+- 每 `RESPONSE_START_POLL_MS`（1000 ms）掃描 headless terminal 尚未 flush 的即時區段（`flushedRow` 之後），出現 `⏺`（執行中標記）或忙碌狀態列（`STATUS_LINE_RE`）即視為回應已開始，呼叫 `closeWhenResponseIsIdle()`
+- 超過 `RESPONSE_START_TIMEOUT_MS`（120000 ms）仍未開始 → 關閉 terminal
+- CLI 提早退出也算未開始。例如目錄未被信任時會跳出信任對話框，而帶初始 prompt 時預設選項是「No, exit」
+- 未開始就結束時，log 印出 `[start] response never started ...`（GitHub Actions `::error::` annotation），process 以 exit code `1` 結束
+- codex/agy 沒有可靠的畫面特徵，spawn 後直接視為已開始
+- TTY 模式下 PTY 輸出也會寫入 headless terminal（但不 flush 印出），偵測才讀得到畫面
 
 **自動關閉狀態機：**
 - `shouldCloseAfterIdle` — 控制輸出資料是否重置 idle timer
 - `didAutoClose` — 防止重複關閉；一般情況下也確保自動關閉時 process 以 exit code 0 結束
-- `submitFailed` — 優先於 `didAutoClose`：一旦送出確認失敗，無論如何關閉都以 exit code 1 結束
+- `responseStarted` — 優先於 `didAutoClose`：回應沒開始就結束，無論如何關閉都以 exit code 1 結束
 
 **Token 處理：** `GH_TOKEN` / `GH_PACKAGES_TOKEN` 會轉入 PTY 環境變數。只有 `command === "code-review"` 時才強制要求 token。
 
