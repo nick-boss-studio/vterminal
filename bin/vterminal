@@ -93,7 +93,7 @@ const responseMaxMs = Number(values.max || process.env.RESPONSE_MAX_MS) || 60000
 
 let shouldCloseAfterIdle = false;
 let didAutoClose = false;
-let submitFailed = false;
+let responseStarted = false;
 let idleTimer = null;
 let maxTimer = null;
 
@@ -103,7 +103,11 @@ if (token) env.GH_TOKEN = token;
 const PTY_COLS = 140;
 const PTY_ROWS = 40;
 
-const shell = pty.spawn(CLAUDE_BIN, [], {
+// 指令直接當成 CLI 的初始 prompt 參數傳入（等同 `claude "/skill 參數"`），
+// 由 CLI 自己在 TUI 準備好之後送出。不再用「固定等待 + bracketed paste +
+// Enter」的方式，避免 TUI 尚未就緒時貼上內容或 Enter 被延遲／吃掉。
+// 參數以陣列傳入、不經過 shell，不需要額外跳脫。
+const shell = pty.spawn(CLAUDE_BIN, [claudeCommand], {
   name: "xterm-256color",
   cols: PTY_COLS,
   rows: PTY_ROWS,
@@ -180,8 +184,10 @@ function previewLiveViewport() {
 }
 
 shell.onData((data) => {
+  // TTY 模式也要餵給 headless terminal，回應啟動偵測才讀得到畫面。
   if (process.stdout.isTTY) {
     process.stdout.write(data);
+    term.write(data);
   } else {
     term.write(data, flushSettledRows);
   }
@@ -198,9 +204,16 @@ shell.onExit(({ exitCode }) => {
   clearTimeout(idleTimer);
   clearTimeout(maxTimer);
   clearInterval(previewTimer);
+  clearInterval(startTimer);
+  if (!responseStarted) {
+    writeGitHubActionsOutput(
+      `[start] response never started (no activity within ${RESPONSE_START_TIMEOUT_MS}ms or CLI exited early)`,
+      { kind: "error", stream: "stderr" }
+    );
+  }
   const finish = () => {
     endGitHubActionsGroup();
-    process.exit(submitFailed ? 1 : didAutoClose ? 0 : (exitCode ?? 0));
+    process.exit(!responseStarted ? 1 : didAutoClose ? 0 : (exitCode ?? 0));
   };
   if (process.stdout.isTTY) {
     finish();
@@ -209,74 +222,27 @@ shell.onExit(({ exitCode }) => {
   }
 });
 
-function pasteAndSubmit(text) {
-  shell.write("\x1b[200~");
-  shell.write(text);
-  shell.write("\x1b[201~");
-  setTimeout(() => shell.write("\n"), 300);
-  setTimeout(() => shell.write("\r"), 800);
-}
-
-// 送出成功的訊號：輸入框清空（不再看到剛貼上的指令文字），或畫面出現
-// 執行中的輸出（⏺ 標記、忙碌狀態列的 spinner/token 數）。只掃描尚未
-// flush 的「即時」區段（flushedRow 之後），避免輸出捲動後舊的歷史行
-// 一直被誤判成「還沒送出」。
-function isPromptSubmitted() {
+// 回應已開始的訊號：畫面出現 ⏺（執行中標記）或忙碌狀態列。只掃描尚未
+// flush 的即時區段（flushedRow 之後）。這兩個特徵是 Claude CLI 專屬的，
+// 其他 CLI（codex/agy）沒有可靠的特徵，直接視為已開始。
+function hasResponseStarted() {
   const buffer = term.buffer.active;
-  let hasExecutionSignal = false;
-  let inputBoxHasCommand = false;
-  // claudeCommand 長度不固定，可能超過 PTY_COLS 而被 xterm 換行成多個實體
-  // row。用 isWrapped 旗標把被換行的連續 row 接回原始邏輯行，再比對完整
-  // 字串，避免單一 row 的片段比對永遠對不上完整的 claudeCommand。
-  //
-  // flushedRow 只是畫面捲動／已印出的邊界，不代表邏輯行邊界：如果
-  // flushedRow 本身落在某個邏輯行的 wrapped 接續列中間，該邏輯行前半段
-  // 可能落在 flushedRow 之前（已 flush，但 buffer 內容還在，只是印過
-  // 了）。往前找到這個邏輯行真正的起始 row 再開始重建 logicalText，避免
-  // 從接續列中間比對、永遠截斷不到完整的 claudeCommand。
-  let scanStart = flushedRow;
-  while (scanStart > 0 && buffer.getLine(scanStart) && buffer.getLine(scanStart).isWrapped) {
-    scanStart--;
-  }
-  let logicalText = "";
-  for (let i = scanStart; i < buffer.length; i++) {
+  for (let i = flushedRow; i < buffer.length; i++) {
     const line = buffer.getLine(i);
     const text = line ? line.translateToString(true) : "";
-    if (i >= flushedRow && (text.includes("⏺") || STATUS_LINE_RE.test(text))) {
-      hasExecutionSignal = true;
-    }
-    logicalText = line && line.isWrapped ? logicalText + text : text;
-    if (logicalText.includes(claudeCommand)) inputBoxHasCommand = true;
+    if (text.includes("⏺") || STATUS_LINE_RE.test(text)) return true;
   }
-  return hasExecutionSignal || !inputBoxHasCommand;
+  return false;
 }
 
-const SUBMIT_VERIFY_DELAY_MS = 4000;
-const SUBMIT_MAX_RETRIES = 3;
+const RESPONSE_START_POLL_MS = 1000;
+const RESPONSE_START_TIMEOUT_MS = Number(process.env.RESPONSE_START_TIMEOUT_MS) || 120000;
+let startTimer = null;
 
-function verifySubmission(retriesLeft) {
-  // term.write("", cb) 會等內部佇列清空後才回呼，確保讀到的 buffer
-  // 已經涵蓋目前收到的所有 PTY 輸出。
-  term.write("", () => {
-    if (isPromptSubmitted()) {
-      closeWhenResponseIsIdle();
-      return;
-    }
-    if (retriesLeft <= 0) {
-      submitFailed = true;
-      writeGitHubActionsOutput(
-        `[submit] prompt not submitted after ${SUBMIT_MAX_RETRIES} retries`,
-        { kind: "error", stream: "stderr" }
-      );
-      closeTerminal();
-      return;
-    }
-    writeGitHubActionsOutput(
-      `[submit] prompt not confirmed yet, retrying (${retriesLeft} attempt(s) left)`
-    );
-    shell.write("\r");
-    setTimeout(() => verifySubmission(retriesLeft - 1), SUBMIT_VERIFY_DELAY_MS);
-  });
+function markResponseStarted() {
+  responseStarted = true;
+  clearInterval(startTimer);
+  closeWhenResponseIsIdle();
 }
 
 function closeTerminal() {
@@ -316,7 +282,22 @@ function closeWhenResponseIsIdle() {
   }
 }
 
-setTimeout(() => {
-  pasteAndSubmit(claudeCommand);
-  setTimeout(() => verifySubmission(SUBMIT_MAX_RETRIES), SUBMIT_VERIFY_DELAY_MS);
-}, 8000);
+// 回應遲遲沒開始（例如 CLI 卡在信任資料夾對話框）就關閉並以 exit code 1
+// 結束，避免被當成 idle 後的正常結束。
+if (/^claude$/i.test(CLAUDE_BIN)) {
+  const startedAt = Date.now();
+  startTimer = setInterval(() => {
+    // term.write("", cb) 等內部佇列清空後才回呼，確保讀到最新畫面。
+    term.write("", () => {
+      if (responseStarted || didAutoClose) return;
+      if (hasResponseStarted()) {
+        writeGitHubActionsOutput("[start] response started");
+        markResponseStarted();
+      } else if (Date.now() - startedAt >= RESPONSE_START_TIMEOUT_MS) {
+        closeTerminal();
+      }
+    });
+  }, RESPONSE_START_POLL_MS);
+} else {
+  markResponseStarted();
+}

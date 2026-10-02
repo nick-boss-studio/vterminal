@@ -17,7 +17,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "release": "semantic-release"
+    "release": "semantic-release",
+    "test": "node --test test/*.test.js"
   },
   "license": "MIT",
   "devDependencies": {
