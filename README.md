@@ -92,11 +92,11 @@ vterminal 直接把指令當成 CLI 的初始 prompt 參數啟動（等同 `clau
 
 ## 不受信任的參數
 
-vterminal 常在 CI 中把外部輸入（例如 issue／PR 留言）當成參數傳給 AI CLI。這類參數可能由不受信任的人撰寫，請使用 **v2.5.3 以上版本**：
+vterminal 常在 CI 中把外部輸入（例如 issue／PR 留言）當成參數傳給 AI CLI。這類參數可能由不受信任的人撰寫，請使用 **v2.5.4 以上版本**（v2.5.3 起不再走 bracketed paste；v2.5.4 起過濾控制字元並跳脫 `::`）：
 
 - v2.5.2 以前以 bracketed paste 把參數寫入 PTY，參數中的控制字元可能提前結束貼上模式，後面的文字會被當成鍵盤輸入
-- 參數中的控制字元會被過濾：`\n`、`\t` 換成空白，其餘控制字元（含 `ESC`、`\r`）與 `DEL` 直接移除
-- 在 GitHub Actions 中，輸出裡以 `::` 開頭的行會被加上 zero-width space 前綴，不會被當成 workflow command（例如 `::add-mask::`、`::stop-commands::`）
+- 參數中的控制字元會被過濾：`\n`、`\t` 換成空白，其餘 C0／C1 控制字元（含 `ESC`、`\r`）與 `DEL` 直接移除
+- 在 GitHub Actions 中，輸出裡以 `::` 開頭（含前導空白）的行會被加上 zero-width space 前綴，不會被當成 workflow command（例如 `::add-mask::`、`::stop-commands::`）
 
 ## 開發與發版
 
