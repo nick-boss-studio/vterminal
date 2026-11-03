@@ -90,6 +90,14 @@ vterminal 直接把指令當成 CLI 的初始 prompt 參數啟動（等同 `clau
 
 使用 `claude` 時，vterminal 會確認回應真的開始了（畫面出現執行中的輸出）。若 120 秒內（可用 `RESPONSE_START_TIMEOUT_MS` 調整）沒有開始，或 CLI 提早退出（例如工作目錄尚未被信任，跳出信任對話框），vterminal 會印出 `[start] response never started ...` 並以非 0 exit code 結束，讓呼叫端（例如 GitHub Actions）能正確判斷為失敗，而不會被誤判成 idle 後的正常關閉。
 
+## 不受信任的參數
+
+vterminal 常在 CI 中把外部輸入（例如 issue／PR 留言）當成參數傳給 AI CLI。這類參數可能由不受信任的人撰寫，請使用 **v2.5.3 以上版本**：
+
+- v2.5.2 以前以 bracketed paste 把參數寫入 PTY，參數中的控制字元可能提前結束貼上模式，後面的文字會被當成鍵盤輸入
+- 參數中的控制字元會被過濾：`\n`、`\t` 換成空白，其餘控制字元（含 `ESC`、`\r`）與 `DEL` 直接移除
+- 在 GitHub Actions 中，輸出裡以 `::` 開頭的行會被加上 zero-width space 前綴，不會被當成 workflow command（例如 `::add-mask::`、`::stop-commands::`）
+
 ## 開發與發版
 
 本專案使用 [semantic-release](https://semantic-release.gitbook.io) 自動管理版本，commit 訊息請遵循 [Conventional Commits](https://www.conventionalcommits.org) 格式。**冒號後必須有空格**，否則不會觸發版本更新。
