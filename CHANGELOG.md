@@ -1,3 +1,10 @@
+## [2.5.4](https://github.com/nick-boss-studio/vterminal/compare/v2.5.3...v2.5.4) (2026-11-03)
+
+
+### Bug Fixes
+
+* 傳給 CLI 的參數過濾控制字元，避免外部輸入影響 PTY 行為 ([#34](https://github.com/nick-boss-studio/vterminal/issues/34)) ([e7313b8](https://github.com/nick-boss-studio/vterminal/commit/e7313b80b4416072e181cefc5dbf72ddee56aced)), closes [#33](https://github.com/nick-boss-studio/vterminal/issues/33) [#35](https://github.com/nick-boss-studio/vterminal/issues/35)
+
 ## [2.5.3](https://github.com/nick-boss-studio/vterminal/compare/v2.5.2...v2.5.3) (2026-10-02)
 
 
