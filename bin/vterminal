@@ -62,8 +62,17 @@ Examples:
   process.exit(values.help ? 0 : 1);
 }
 
-const command = positionals[0];
-const params = positionals.slice(1).join(" ");
+// 參數常來自外部輸入（例如 issue／PR 留言），先過濾控制字元再組 prompt：
+// \n、\t 換成空白，其餘 C0／C1 控制字元（含 ESC、\r）與 DEL 直接移除，
+// 避免影響 CLI 的輸入行為，或讓 \r 切斷 log 行、讓後續文字落在行首。
+function sanitizeArg(text) {
+  return String(text)
+    .replace(/[\n\t]/g, " ")
+    .replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/g, "");
+}
+
+const command = sanitizeArg(positionals[0]);
+const params = positionals.slice(1).map(sanitizeArg).join(" ");
 const claudeCommand = params ? `/${command} ${params}` : `/${command}`;
 
 const token = values.token || process.env.GH_TOKEN || process.env.GH_PACKAGES_TOKEN;

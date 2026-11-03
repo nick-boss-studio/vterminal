@@ -43,11 +43,11 @@ function runVterminal(args, { mode, env = {} }) {
   const childEnv = {
     ...process.env,
     PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
-    FAKE_CLI_MODE: mode,
-    ...env
+    FAKE_CLI_MODE: mode
   };
   delete childEnv.GITHUB_ACTIONS;
   delete childEnv.CLAUDE_BIN;
+  Object.assign(childEnv, env);
 
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [VTERMINAL, ...args], {
@@ -104,4 +104,32 @@ test("non-claude CLIs are treated as started without an execution marker", async
   assert.equal(code, 0, output);
   assert.ok(output.includes(`ARGS ${JSON.stringify(["/simplify"])}`), output);
   assert.doesNotMatch(output, /\[start\]/);
+});
+
+test("strips control characters from params before passing them to the CLI", async () => {
+  const params = "a\x1b[201~b\rc\nd\te\x01f\x7fg";
+  const { code, output } = await runVterminal(["lab-review", params, "--idle", "500"], {
+    mode: "respond"
+  });
+  assert.equal(code, 0, output);
+  assert.ok(
+    output.includes(`⏺ ARGS ${JSON.stringify(["/lab-review a[201~bc d efg"])}`),
+    output
+  );
+  assert.ok(output.includes("Running: /lab-review a[201~bc d efg\n"), output);
+});
+
+test("params cannot start a GitHub Actions workflow command line", async () => {
+  const params = "x\r::add-mask::secret\n::stop-commands::tok";
+  const { code, output } = await runVterminal(["lab-review", params, "--idle", "500"], {
+    mode: "respond",
+    env: { GITHUB_ACTIONS: "true" }
+  });
+  assert.equal(code, 0, output);
+  const commandLines = output
+    .split(/\r\n|\r|\n/)
+    .map((line) => line.trimStart())
+    .filter((line) => line.startsWith("::"))
+    .map((line) => line.match(/^::[^:\s]+/)[0]);
+  assert.deepEqual([...new Set(commandLines)].sort(), ["::endgroup", "::group"], output);
 });
